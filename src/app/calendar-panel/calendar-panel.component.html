@@ -1,0 +1,34 @@
+<div class="cal-wrap">
+  <ng-container *ngIf="!loading; else loadingTpl">
+    <ng-container *ngIf="events.length > 0; else emptyTpl">
+      <ul class="list-unstyled m-0">
+        <li *ngFor="let ev of events" class="cal-item">
+          <!-- feste Kategorienspalte (gleich breit) -->
+          <div class="cat" [ngClass]="catClass(ev.category)" [title]="catLabel(ev.category)">
+            {{ catLabel(ev.category) }}
+          </div>
+
+          <!-- Hauptbereich -->
+          <div class="main">
+            <div class="title" [title]="ev.title">{{ ev.title }}</div>
+            <div class="location" *ngIf="ev.location" [title]="ev.location">{{ ev.location }}</div>
+          </div>
+
+          <!-- Datum/Uhrzeit -->
+          <div class="when">
+            <div class="date">{{ ev.startMs | date:'EEE, dd.MM.yyyy': timezone : 'de-AT' }}</div>
+            <div class="time">{{ ev.startMs | date:'HH:mm': timezone : 'de-AT' }}</div>
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="muted">Kalender wird geladen…</div>
+  </ng-template>
+
+  <ng-template #emptyTpl>
+    <div class="muted">Keine anstehenden Termine.</div>
+  </ng-template>
+</div>

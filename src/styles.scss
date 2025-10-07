@@ -1,0 +1,47 @@
+/* optional: Farbanpassungen VOR Bootstrap */
+$primary: #1356b5;
+$body-bg: #0b0c0f;
+$body-color: #fff;
+
+/* Bootstrap laden */
+@import "bootstrap/scss/bootstrap";
+
+/* Bootstrap Icons (als CSS) */
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+
+html, body, app-root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0b0c0f;
+  color: #fff;
+  overflow: hidden; // verhindert Scrollbars auf dem Screen
+}
+
+/* Globale Vorsorge: kein Caret nirgendwo */
+html, body {
+  caret-color: transparent;
+}
+
+/* Header komplett fokussicher & nicht selektierbar */
+.topbar, .topbar * {
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
+}
+
+/* iFrames sollen keine Interaktion/Fokus bekommen */
+.panel iframe {
+  pointer-events: none;   /* verhindert Klicks/Scrolls im iFrame */
+  caret-color: transparent;
+}
+
+/* Falls Browser trotzdem tabbt: */
+.panel iframe:focus {
+  outline: none;
+}

@@ -1,0 +1,35 @@
+<div class="status-wrap">
+  <ng-container *ngIf="!loading; else loadingTpl">
+    <ng-container *ngIf="einsaetze.length > 0; else leerTpl">
+      <ul class="list-unstyled m-0">
+        <li *ngFor="let e of einsaetze" class="item">
+          <div class="left">
+            <div class="stichwort">
+              <span class="badge me-2" [ngClass]="{
+                'text-bg-danger': e.alarmstufe?.startsWith('B'),
+                'text-bg-primary': e.alarmstufe?.startsWith('T'),
+                'text-bg-warning': e.alarmstufe?.startsWith('S'),
+                'text-bg-secondary': !e.alarmstufe
+              }">{{ e.alarmstufe || '–' }}</span>
+              {{ e.stichwort || 'Einsatz' }}
+            </div>
+            <div class="ort">{{ e.ort }} <span *ngIf="e.ort2">· {{ e.ort2 }}</span></div>
+            <div class="nr" *ngIf="e.nummer">{{ e.nummer }}</div>
+          </div>
+          <div class="right">
+            <div class="zeit">{{ e.ts | date:'dd.MM.yyyy HH:mm' }}</div>
+            <div class="dauer text-muted small">{{ diffText(e.ts) }}</div> <!-- ⬅️ HIER -->
+          </div>
+        </li>
+      </ul>
+    </ng-container>
+
+    <ng-template #leerTpl>
+      <div class="empty">Keine aktiven Einsätze im Bezirk.</div>
+    </ng-template>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="empty">Lade aktive Einsätze …</div>
+  </ng-template>
+</div>

@@ -1,0 +1,123 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* NEU: nimmt gesamte Bodyhöhe */
+  background: #0b0c0f;
+  color: #fff;
+}
+
+/* ----- Header / Navbar ----- */
+.navbar.bg-dark {
+  background: linear-gradient(180deg, #1e1f22, #141516) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* Logos in FARBE */
+.logo-img {
+  height: 85px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Hauptinhalt füllt alles unterhalb des Headers */
+.screen-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* Zweispaltiges Vollhöhen-Layout */
+.screen-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  height: 100%; /* wichtig */
+}
+
+/* Linke Spalte: 2 Reihen (50/50) */
+.col-left {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* Rechte Spalte: eine Zeile */
+.col-right {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+/* Panels */
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: #15171b;
+  border: 1px solid #1f2229;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  overflow: hidden;
+  min-height: 0;
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #1f2229;
+
+    h2 {
+      margin: 0;
+      font-size: clamp(16px, 2vw, 18px);
+      font-weight: 700;
+      letter-spacing: .2px;
+      color: #e7eaf0;
+    }
+  }
+
+
+  iframe {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #0e0f12;
+  }
+}
+.uwz-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #0e0f12; // optional dunkler Hintergrund
+  overflow: hidden;
+}
+
+.uwz-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; // skaliert und zentriert
+  display: block;
+}
+
+/* Responsiv: kleinere Logos */
+@media (max-width: 576px) {
+  .logo-img { height: 38px; }
+}
+
+/* Einspaltig unter 1100px */
+@media (max-width: 1100px) {
+  .screen-grid {
+    grid-template-columns: 1fr;
+  }
+  .col-left {
+    grid-template-rows: auto auto;
+  }
+}

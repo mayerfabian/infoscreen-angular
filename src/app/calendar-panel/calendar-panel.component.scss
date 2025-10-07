@@ -1,0 +1,111 @@
+/* === Kalender Panel Styles =============================================== */
+
+.cal-wrap {
+  padding: 8px 10px;
+  height: 100%;
+  overflow: auto;
+}
+
+.cal-item {
+  display: grid;
+  grid-template-columns: 200px 1fr auto; /* BREITER: feste Spalte für Kategorie */
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px dashed rgba(255,255,255,.08);
+}
+.cal-item:last-child {
+  border-bottom: 0;
+}
+
+/* --- Kategoriespalte ---------------------------------------------------- */
+.cat {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 36px;          /* etwas höher für mehr Luft */
+  min-width: 200px;      /* BREITER: passt für „SONSTIGER TERMIN“ */
+  border-radius: 10px;
+
+  padding: 0 20px;       /* mehr Innenabstand links/rechts */
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+
+  white-space: nowrap;   /* eine Zeile behalten */
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+  transition: filter .15s ease, transform .15s ease;
+}
+
+/* Farben je Kategorie */
+.cat-uebung       { background: #006e25; }
+.cat-besprechung  { background: #f0ad4e; color: #000; }
+.cat-bewerb       { background: #198754; }
+.cat-ausbildung   { background: #0dcaf0; color: #000; }
+
+/* „Sonstiger Termin“: mehr Kontrast, wirkt „massiver“ */
+.cat-termin,
+.cat-default {
+  background: linear-gradient(145deg, #600000, #d30000);
+//   border: 1px solid rgba(255,255,255,0.08);
+//   box-shadow:
+//     inset 0 0 4px rgba(0,0,0,0.25),
+//     inset 0 0 0 1px rgba(255,255,255,0.05); 
+}
+
+.cat:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+/* --- Hauptbereich mit Titel und Ort ------------------------------------ */
+.main .title {
+  font-weight: 700;
+  letter-spacing: .2px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.main .location {
+  opacity: .85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Rechte Spalte: Datum / Uhrzeit ------------------------------------ */
+.when {
+  text-align: right;
+  white-space: nowrap;
+}
+.when .date { font-weight: 600; }
+.when .time { opacity: .85; }
+
+/* --- Infozeilen --------------------------------------------------------- */
+.muted {
+  opacity: .7;
+  padding: 8px 0;
+  text-align: center;
+}
+
+/* --- Responsive --------------------------------------------------------- */
+@media (max-width: 640px) {
+  .cal-item {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "cat when"
+      "main main";
+    align-items: start;
+  }
+  .cat  { grid-area: cat; min-width: 0; width: 100%; }
+  .main { grid-area: main; }
+  .when { grid-area: when; }
+}

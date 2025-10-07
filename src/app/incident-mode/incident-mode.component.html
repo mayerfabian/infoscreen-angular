@@ -1,0 +1,15 @@
+<div class="incident" *ngIf="modeService.einsatz() as list; else noEinsatz">
+  <h2>Einsatzmodus aktiv 🚨</h2>
+  <div *ngFor="let e of list" class="einsatz-card">
+    <h3>{{ e.eventtype }} – {{ e.eventtypetext }}</h3>
+    <p>
+      <strong>Ort:</strong> {{ e.location.city }}<br />
+      <strong>Adresse:</strong> {{ e.location.street }}<br />
+      <strong>Zeit:</strong> {{ e.alarmtime | date:'dd.MM.yyyy HH:mm' }}
+    </p>
+  </div>
+</div>
+
+<ng-template #noEinsatz>
+  <div class="incident"><h2>Keine aktiven Einsätze</h2></div>
+</ng-template>

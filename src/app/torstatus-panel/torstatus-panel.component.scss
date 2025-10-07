@@ -1,0 +1,27 @@
+.status-wrap {
+  padding: 8px 10px;
+
+  .item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(255,255,255,.08);
+  }
+  .item:last-child { border-bottom: 0; }
+
+  .stichwort { font-weight: 700; letter-spacing: .2px; }
+  .ort { opacity: .85; }
+  .nr { opacity: .6; font-size: .9rem; margin-top: 2px; }
+
+  .zeit {
+    font-variant-numeric: tabular-nums;
+    opacity: .9;
+    white-space: nowrap;
+  }
+  .dauer{
+    text-align: end;
+  }
+
+  .empty { opacity: .7; padding: 8px 0; }
+}
