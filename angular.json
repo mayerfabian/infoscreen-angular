@@ -40,6 +40,8 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/test/",
+              "deployUrl": "/test/",
               "budgets": [
                 {
                   "type": "initial",
