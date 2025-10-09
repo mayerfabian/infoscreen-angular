@@ -19,6 +19,10 @@
     "@angular/router": "^19.2.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "express": "^5.1.0",
+    "googleapis": "^161.0.0",
+    "ical.js": "^2.2.1",
+    "node-ical": "^0.21.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -35,5 +39,19 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.7.2"
-  }
+  },
+  "description": "This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.10.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayerfabian/infoscreen-angular.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/mayerfabian/infoscreen-angular/issues"
+  },
+  "homepage": "https://github.com/mayerfabian/infoscreen-angular#readme"
 }

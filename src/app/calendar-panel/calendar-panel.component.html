@@ -12,13 +12,28 @@
           <div class="main">
             <div class="title" [title]="ev.title">{{ ev.title }}</div>
             <div class="location" *ngIf="ev.location" [title]="ev.location">{{ ev.location }}</div>
+            <div class="desc" *ngIf="ev.description">{{ ev.description }}</div> <!-- NEU -->
           </div>
 
           <!-- Datum/Uhrzeit -->
           <div class="when">
-            <div class="date">{{ ev.startMs | date:'EEE, dd.MM.yyyy': timezone : 'de-AT' }}</div>
-            <div class="time">{{ ev.startMs | date:'HH:mm': timezone : 'de-AT' }}</div>
+            <div class="date">
+              {{ ev.startMs | date:'EEE, dd.MM.yyyy': timezone : 'de-AT' }}
+            </div>
+
+            <!-- Zeit nur zeigen, wenn nicht 00:00 bzw. wenn von–bis -->
+            <div class="time" *ngIf="showTime(ev)">
+              <ng-container *ngIf="hasEndTime(ev); else onlyStart">
+                {{ ev.startMs | date:'HH:mm': timezone : 'de-AT' }}
+                –
+                {{ ev.endMs   | date:'HH:mm': timezone : 'de-AT' }}
+              </ng-container>
+              <ng-template #onlyStart>
+                {{ ev.startMs | date:'HH:mm': timezone : 'de-AT' }}
+              </ng-template>
+            </div>
           </div>
+
         </li>
       </ul>
     </ng-container>
