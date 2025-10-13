@@ -1,12 +1,13 @@
 import { Component, OnDestroy, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { TorstatusPanelComponent } from '../torstatus-panel/torstatus-panel.component';
-import { CalendarPanelComponent } from '../calendar-panel/calendar-panel.component';
+import { IncidentModeComponent } from '../incident-mode/incident-mode.component';
+import { RestModeComponent } from '../rest-mode/rest-mode.component';
+import { ModeService } from '../mode.service';
 
 @Component({
   selector: 'app-infoscreen',
   standalone: true,
-  imports: [DatePipe,TorstatusPanelComponent,CalendarPanelComponent],
+  imports: [DatePipe,IncidentModeComponent,RestModeComponent],
   templateUrl: './infoscreen.component.html',
   styleUrls: ['./infoscreen.component.scss']
 })
@@ -21,6 +22,9 @@ export class InfoscreenComponent implements OnDestroy {
   private time = setInterval(() => this.now.set(new Date()), 1000);
   private reload = setInterval(() => this.reloadIframes(),5* 60 * 1000); // alle 5 Min
   url = "https://uwz.at/data/previews/AT_warning_today_all_desktop.png?cache="+this.timestamp;
+  // src/app/infoscreen/infoscreen.component.ts
+  constructor(public mode: ModeService) {}
+
 
   reloadIframes() {
     const iframes = document.querySelectorAll('iframe');

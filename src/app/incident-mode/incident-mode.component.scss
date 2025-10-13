@@ -1,54 +1,88 @@
-.incident-screen {
-  height: 100vh;
-  width: 100vw;
-  background: #2b0000 radial-gradient(circle at 50% 10%, rgba(255,40,40,.1), transparent 60%) no-repeat;
-  color: #fff;
+/* Body bleibt schwarz */
+:host {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  background: #000; /* tiefschwarz */
+  color: #fff;
 }
 
-.topbar {
-  background: linear-gradient(90deg, #6b0000, #9e0000);
-  box-shadow: inset 0 -2px 0 rgba(255,255,255,.15);
-  .siren {
-    font-size: 2rem;
-    animation: pulse 1.5s infinite ease-in-out;
+/* Logos (wie zuvor) */
+.logo-img {
+  height: 85px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* 🔴 Knallroter Header NUR im Alarmmodus */
+.alarm-red {
+  /* satter Rot-Gradient mit leichtem Glanz */
+  background: linear-gradient(180deg, #b0001e, #8b0016) !important;
+  border-bottom: 1px solid rgba(255, 80, 100, 0.45);
+  box-shadow: 0 4px 14px rgba(255, 0, 43, 0.28), inset 0 -1px 0 rgba(255,255,255,0.08);
+  color: #fff;
+
+  .navbar-brand,
+  .nav-link,
+  .meldebild-title,
+  .meldebild-sub {
+    color: #fff !important;
   }
-  .clock { font-weight: 700; letter-spacing: .05em; }
 }
 
 .ticker {
-  height: 6px;
+  height: 8px;
   width: 100%;
   background: repeating-linear-gradient(
     90deg,
-    #ff2b2b 0,
-    #ff2b2b 20px,
+    #ffd400 0,
+    #ffd400 20px,
     #000 20px,
     #000 40px
   );
-  &.flash { animation: flash 1s infinite steps(2, end); }
-}
-
-.incident-card {
-  background: rgba(0,0,0,.35);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 1rem;
-  .label { text-transform: uppercase; font-size: .75rem; opacity: .7; }
-  .value { font-size: 1.25rem; font-weight: 600; }
-  .role { font-weight: 700; letter-spacing: .02em; }
-}
-
-.empty { opacity: .85; }
-
-@keyframes pulse {
-  0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255,60,60,.0)); }
-  50% { transform: scale(1.1); filter: drop-shadow(0 0 12px rgba(255,60,60,.5)); }
-  100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255,60,60,.0)); }
+  &.flash { animation: flash 0.6s infinite steps(2, end); }
 }
 
 @keyframes flash {
-  0% { opacity: 1; }
-  50% { opacity: .25; }
+  0%   { opacity: 1; }
+  50%  { opacity: .22; }
   100% { opacity: 1; }
+}
+
+
+/* Content unter dem Header */
+.screen-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* Panels dunkel für Kontrast auf Schwarz */
+.incident-card,
+.panel {
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.45);
+  .label { text-transform: uppercase; font-size: .75rem; opacity: .7; }
+  .value { font-size: 1.15rem; font-weight: 600; }
+}
+
+/* Responsive Logo-Größe */
+@media (max-width: 576px) {
+  .logo-img { height: 38px; }
+}
+.meldebild-title {
+  font-size: clamp(28px, 4.8vw, 56px); /* vorher kleiner */
+  line-height: 1.05;
+  letter-spacing: .03em;
+  font-weight: 800;
+}
+
+.meldebild-sub {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
 }

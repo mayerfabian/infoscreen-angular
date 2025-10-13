@@ -39,8 +39,8 @@ export interface Einsatz {
  */
 @Injectable({ providedIn: 'root' })
 export class ModeService {
-  private leaActiveUrl = '/api/lea/active';   // <--- anpassen
-  private leaHistoryUrl = '/api/lea/history'; // <--- anpassen
+  private leaActiveUrl = 'assets/mock/lea-active.json';
+  private leaHistoryUrl = 'assets/mock/lea-active.json'; // optional
 
   private modeSignal = signal<'ruhe' | 'einsatz'>('ruhe');
   private einsatzSignal = signal<Einsatz[]>([]);

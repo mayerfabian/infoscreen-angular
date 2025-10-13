@@ -1,19 +1,35 @@
 <div class="incident-screen">
-  <div class="topbar d-flex align-items-center justify-content-between px-4 py-2">
-    <div class="d-flex align-items-center gap-3">
-      <i class="bi bi-broadcast-pin siren"></i>
-      <div class="title">
-        <div class="h1 m-0 fw-bold">ALARM</div>
-        <small class="opacity-75">Einsatzmodus aktiv</small>
+<header class="navbar navbar-expand alarm-red border-bottom shadow-sm sticky-top py-2">
+  <div class="container-fluid align-items-center">
+    <!-- Left -->
+    <div class="navbar-brand d-flex align-items-center gap-2 me-auto" aria-label="LEA">
+      <img src="assets/LEA_Blue-1.png" alt="LEA" class="logo-img" />
+    </div>
+
+    <!-- Center -->
+    <div class="text-center flex-grow-1" *ngIf="modeService.einsatz()[0] as e">
+      <div class="meldebild-title text-white fw-bold">{{ meldebild(e) }}</div>
+      <div class="meldebild-sub text-white-50">
+        <span *ngIf="e.location">
+          {{ e.location?.street }} {{ e.location?.housenumber }},
+          {{ e.location?.zipcode }} {{ e.location?.city }}
+        </span>
+        <span *ngIf="!e.location && e.additionalinformation">{{ e.additionalinformation }}</span>
       </div>
     </div>
-    <div class="clock">
-      <!-- Erstes Element aus der Liste -->
-      {{ modeService.einsatz()[0]?.alarmtime | date:'dd.MM.yyyy HH:mm' }}
-    </div>
-  </div>
 
-  <div class="ticker flash"></div>
+    <!-- Right: FF Logo -->
+    <div class="ms-auto d-flex align-items-center">
+      <img src="assets/logo_ohne_text.png" alt="Feuerwehr-Logo" class="logo-img ff-logo" />
+    </div>
+
+  </div>
+</header>
+
+<!-- Knalliger roter Alarm-Ticker -->
+<div class="ticker flash"></div>
+
+
 
   <div class="container-fluid py-4">
     <ng-container *ngIf="modeService.einsatz() as list; else noneTpl">

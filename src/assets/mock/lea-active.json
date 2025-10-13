@@ -1,0 +1,52 @@
+[
+  {
+    "id": "136964",
+    "eventtypetext": "Ölspur",
+    "eventtype": "S1",
+    "location": {
+      "city": "Würflach",
+      "zipcode": "2732",
+      "street": "Gerasdorfer Strasse",
+      "housenumber": "58",
+      "x": 47.776183,
+      "y": 16.055902,
+      "objectname": "",
+      "additionalinfo": ""
+    },
+    "additionalinformation": "A15425SR (13:55) S1 Ölspur. Neubau, Gerasdorfer Strasse 58, 2732 Würflach: PKW mit Getriebeschaden",
+    "alarmtime": 1760270132000,
+    "alarmedalarmgroups": [
+      { "id": "A15425SR", "name": "NK - FF Würflach-Hettmannsdorf - Sammelruf" }
+    ],
+    "alarmedpersons": [
+      {
+        "id": "1",
+        "firstname": "Fabian",
+        "lastname": "Mayer",
+        "functions": [
+          { "id": "1961", "shortname": "EL", "name": "Einsatzleiter" },
+          { "id": "158972", "shortname": "C", "name": "C-Fahrer" }
+        ],
+        "response": { "timestamp": 1760270241000, "basicresponse": "Ja", "freetext": "" }
+      },
+      {
+        "id": "2",
+        "firstname": "Johannes",
+        "lastname": "Lebel",
+        "functions": [
+          { "id": "14445", "shortname": "ATS", "name": "Atemschutz" }
+        ],
+        "response": { "timestamp": 1760270253000, "basicresponse": "Nein", "freetext": "" }
+      },
+      {
+        "id": "3",
+        "firstname": "Katharina",
+        "lastname": "Lethmayer",
+        "functions": [
+          { "id": "14445", "shortname": "ATS", "name": "Atemschutz" }
+        ],
+        "response": null
+      }
+    ]
+  }
+]

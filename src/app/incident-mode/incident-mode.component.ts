@@ -46,4 +46,12 @@ export class IncidentModeComponent {
     return ppl.filter(p => this.hasRole(p, short) && p.response?.basicresponse === 'Ja')
               .map(p => `${p.firstname} ${p.lastname}`);
   }
+
+  meldebild(e?: Einsatz): string {
+    if (!e) return 'ALARM';
+    const typ = (e.eventtype || '').trim();
+    const text = (e.eventtypetext || '').trim();
+    if (typ && text) return `${typ} – ${text}`;
+    return typ || text || 'ALARM';
+  }
 }
