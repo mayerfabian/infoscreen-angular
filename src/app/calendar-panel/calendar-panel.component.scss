@@ -8,7 +8,7 @@
 
 .cal-item {
   display: grid;
-  grid-template-columns: 200px 1fr auto; /* BREITER: feste Spalte für Kategorie */
+  grid-template-columns: 200px minmax(0,1fr) auto; /* cat | main | when */
   align-items: center;
   gap: 12px;
   padding: 12px 0;
@@ -18,6 +18,9 @@
   border-bottom: 0;
 }
 
+/* WICHTIG: damit Inhalte im Grid umbrechen dürfen */
+.cat, .main, .when { min-width: 0; }
+
 /* --- Kategoriespalte ---------------------------------------------------- */
 .cat {
   box-sizing: border-box;
@@ -25,17 +28,18 @@
   align-items: center;
   justify-content: center;
 
-  height: 36px;          /* etwas höher für mehr Luft */
-  min-width: 200px;      /* BREITER: passt für „SONSTIGER TERMIN“ */
+  height: 36px;
+  min-width: 200px;
   border-radius: 10px;
 
-  padding: 0 20px;       /* mehr Innenabstand links/rechts */
+  padding: 0 20px;
   font-size: 0.9rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .5px;
 
-  white-space: nowrap;   /* eine Zeile behalten */
+  /* Desktop: 1-zeilig mit Ellipsis */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
@@ -45,46 +49,62 @@
 }
 
 /* Farben je Kategorie */
-.cat-uebung       { background: #006e25; }
-.cat-besprechung  { background: #f0ad4e; color: #000; }
+.cat-uebung       { background: #f14242; color: #ffffff; }
+.cat-besprechung  { background: #f0ad4e; color: #ffffff; }
 .cat-bewerb       { background: #198754; }
-.cat-ausbildung   { background: #0dcaf0; color: #000; }
-
-/* „Sonstiger Termin“: mehr Kontrast, wirkt „massiver“ */
+.cat-ausbildung   { background: #ffe600; color: #000; }
+.cat-modulausbildung         { background: #ffbb00; color: #000; }
+.cat-jugend,
+.cat-kind       { background: #ff00aa; color: #ffffff; }
+.cat-einsatz      { background: linear-gradient(145deg, #600000, #d30000); color: #ffffff; }
+.cat-veranstaltung { background: #160091; color: #ffffff; }
 .cat-termin,
-.cat-default {
-  background: linear-gradient(145deg, #600000, #d30000);
-//   border: 1px solid rgba(255,255,255,0.08);
-//   box-shadow:
-//     inset 0 0 4px rgba(0,0,0,0.25),
-//     inset 0 0 0 1px rgba(255,255,255,0.05); 
-}
+.cat-default      { background: #5e5e5e; color: #ffffff; }
 
 .cat:hover {
   filter: brightness(1.12);
   transform: translateY(-1px);
 }
 
-/* --- Hauptbereich mit Titel und Ort ------------------------------------ */
+/* --- Hauptbereich mit Titel / Ort / Beschreibung ------------------------ */
+.main .title,
+.main .location,
+.main .desc {
+  /* echtes Umbrechen inkl. langer Wörter */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Titel kräftig, auf 2 Zeilen clampen (optional) */
 .main .title {
   font-weight: 700;
   letter-spacing: .2px;
   line-height: 1.25;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;     /* max. 2 Zeilen */
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
+
 .main .location {
   opacity: .85;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.desc {
+  white-space: pre-wrap; /* Zeilenumbrüche aus Text beibehalten */
+  color: #cfcfcf;
+  margin-top: 2px;
 }
 
 /* --- Rechte Spalte: Datum / Uhrzeit ------------------------------------ */
 .when {
   text-align: right;
-  white-space: nowrap;
+  /* Darf umbrechen wenn zu eng (z. B. mobile) */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .when .date { font-weight: 600; }
 .when .time { opacity: .85; }
@@ -105,7 +125,19 @@
       "main main";
     align-items: start;
   }
-  .cat  { grid-area: cat; min-width: 0; width: 100%; }
+  .cat  {
+    grid-area: cat;
+    min-width: 0;
+    width: 100%;
+    /* Mobile: Badge darf mehrzeilig werden statt abgeschnitten */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-overflow: clip;
+    height: auto;        /* wächst mit */
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
   .main { grid-area: main; }
-  .when { grid-area: when; }
+  .when { grid-area: when; text-align: right; }
 }

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { NgIf, NgFor, DatePipe, NgClass } from '@angular/common';
 import { EinsatzService, EinsatzKurz } from '../einsatz.service';
 
-const WEEK_MS =200 * 7 * 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Component({
   selector: 'app-torstatus-panel',

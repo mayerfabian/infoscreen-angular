@@ -12,11 +12,15 @@ import { CalendarPanelComponent } from '../calendar-panel/calendar-panel.compone
 })
 export class InfoscreenComponent implements OnDestroy {
   now = signal(new Date());
-  private t = setInterval(() => this.now.set(new Date()), 1000);
+  timestamp = Date.now();
 
+  private t = setInterval(() => {
+    this.now.set(new Date());
+    this.timestamp = Date.now();
+  }, 1000);
   private time = setInterval(() => this.now.set(new Date()), 1000);
   private reload = setInterval(() => this.reloadIframes(),5* 60 * 1000); // alle 5 Min
-  url = "https://uwz.at/data/previews/AT_warning_today_all_desktop.png?cache="+this.now;
+  url = "https://uwz.at/data/previews/AT_warning_today_all_desktop.png?cache="+this.timestamp;
 
   reloadIframes() {
     const iframes = document.querySelectorAll('iframe');
