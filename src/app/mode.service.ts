@@ -1,64 +1,77 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { timer, switchMap, catchError, of, map } from 'rxjs';
+import { timer, switchMap, catchError, of } from 'rxjs';
 
+/** LEA JSON Typen (vereinfacht an das Beispiel angepasst) */
+export interface LeaFunction { id: string; shortname: string; name: string; }
+export interface LeaResponse { timestamp: number; basicresponse: 'Ja' | 'Nein' | string; freetext: string; }
+export interface LeaPerson {
+  id: string;
+  firstname: string;
+  lastname: string;
+  qualifications: any[];
+  functions: LeaFunction[];
+  response: LeaResponse | null;
+}
+export interface LeaLocation {
+  city: string; zipcode: string; street: string; housenumber?: string;
+  x?: number; y?: number; objectname?: string; additionalinfo?: string;
+}
 export interface Einsatz {
   id: string;
   eventtype: string;
   eventtypetext: string;
-  location: { city: string; street: string };
-  alarmtime: number;
+  location: LeaLocation;
+  additionalinformation?: string;
+  alarmtime: number; // Unix ms
+  alarmedalarmgroups?: any[];
+  alarmedpersons?: LeaPerson[];
+  additionaldivisions?: any[];
 }
 
+/**
+ * ModeService hält:
+ * - aktuellen Modus (ruhe|einsatz)
+ * - aktuelle Einsätze (LEA-Schema)
+ * - Historie (optional)
+ *
+ * Endpoints bitte anpassen auf eure Backend-URL.
+ */
 @Injectable({ providedIn: 'root' })
 export class ModeService {
-  // ---- Signale ----
-  private modeSignal = signal<'ruhe' | 'einsatz'>('ruhe');
-  private einsatzSignal = signal<Einsatz[] | null>(null);
-  private historySignal = signal<Einsatz[] | null>(null);
+  private leaActiveUrl = '/api/lea/active';   // <--- anpassen
+  private leaHistoryUrl = '/api/lea/history'; // <--- anpassen
 
-  // ---- Öffentliche Getter ----
+  private modeSignal = signal<'ruhe' | 'einsatz'>('ruhe');
+  private einsatzSignal = signal<Einsatz[]>([]);
+  private historySignal = signal<Einsatz[]>([]);
+
+  /** API */
   readonly mode = computed(() => this.modeSignal());
   readonly einsatz = computed(() => this.einsatzSignal());
   readonly history = computed(() => this.historySignal());
 
-  // ---- API-URLs ----
-  private leaUrl = 'https://deine-domain.at/api/lea.php';
-  private leaHistoryUrl = 'https://deine-domain.at/api/lea_history.php';
-
   constructor(private http: HttpClient) {
-    // 1️⃣ Haupt-Polling: aktueller Einsatzstatus
-    timer(0, 8000)
-      .pipe(
-        switchMap(() =>
-          this.http.get<Einsatz[]>(this.leaUrl).pipe(
-            catchError(() => of([])) // Fehler = Ruhe
-          )
-        )
+    // Aktive Einsätze pollen
+    timer(0, 10_000).pipe(
+      switchMap(() => this.http.get<Einsatz[]>(this.leaActiveUrl)
+        .pipe(catchError(() => of([] as Einsatz[])))
       )
-      .subscribe((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          this.modeSignal.set('einsatz');
-          this.einsatzSignal.set(data);
-        } else {
-          this.modeSignal.set('ruhe');
-          this.einsatzSignal.set(null);
-        }
-      });
+    ).subscribe(list => {
+      const safe = Array.isArray(list) ? list : [];
+      this.einsatzSignal.set(safe);
+      this.modeSignal.set(safe.length > 0 ? 'einsatz' : 'ruhe');
+    });
 
-    // 2️⃣ Nebenläufig: Historie seltener laden (alle 5 Minuten)
-    timer(0, 300000)
-      .pipe(
-        switchMap(() =>
-          this.http.get<Einsatz[]>(this.leaHistoryUrl).pipe(
-            catchError(() => of([]))
-          )
-        )
+    // Historie optional pollen (seltener)
+    timer(0, 60_000).pipe(
+      switchMap(() => this.http.get<Einsatz[]>(this.leaHistoryUrl)
+        .pipe(catchError(() => of([] as Einsatz[])))
       )
-      .subscribe((data) => this.historySignal.set(data));
+    ).subscribe(list => this.historySignal.set(Array.isArray(list) ? list : []));
   }
 
-  // Für Testzwecke manuell umschalten
+  /** Manuelles Umschalten, z.B. für Tests */
   setModeManually(mode: 'ruhe' | 'einsatz') {
     this.modeSignal.set(mode);
   }
