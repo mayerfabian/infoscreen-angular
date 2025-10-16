@@ -1,0 +1,45 @@
+<section class="panel">
+  <div class="panel-header">
+    <h2>Straßenansicht (Panorama)</h2>
+    <span class="ms-auto badge bg-dark-subtle text-dark" *ngIf="einsatz?.alarmtime as ts">
+      {{ ts | date:'dd.MM.yyyy · HH:mm' }}
+    </span>
+  </div>
+
+  <div class="panel-body">
+    <div *ngIf="missingKey" class="alert alert-warning mb-3">
+      Kein Google Street View API-Key konfiguriert. Bitte
+      <code>environment.GOOGLE_STREETVIEW_KEY</code> setzen.
+    </div>
+
+    <div *ngIf="missingCoords" class="alert alert-warning mb-3">
+      Keine Koordinaten in der Alarmierung (location.x / location.y).
+    </div>
+
+    <!-- Vollhöhe + "Bounce"-Scroll (kein sichtbarer Sprung) -->
+    <ng-container *ngIf="!missingKey && !missingCoords">
+      <ng-container *ngIf="buildUrls() as urls">
+        <div class="sv-viewport" [style.--sv-duration]="scrollDurationSec + 's'">
+          <div class="sv-track bounce">
+            <img *ngFor="let url of urls"
+                 class="sv-img"
+                 [src]="url"
+                 alt="Street View"
+                 loading="lazy"
+                 referrerpolicy="no-referrer"
+                 crossorigin="anonymous" />
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- Optional: Meta -->
+    <div class="meta mt-3" *ngIf="einsatz as e">
+      <div class="label">Position</div>
+      <div class="value" *ngIf="e.location as loc">
+        {{ loc.street }} {{ loc.housenumber }}, {{ loc.zipcode }} {{ loc.city }}
+        <span class="coords">({{ loc.x }}, {{ loc.y }})</span>
+      </div>
+    </div>
+  </div>
+</section>

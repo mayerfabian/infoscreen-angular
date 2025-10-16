@@ -7,7 +7,7 @@ import { ModeService } from '../mode.service';
 @Component({
   selector: 'app-infoscreen',
   standalone: true,
-  imports: [DatePipe,IncidentModeComponent,RestModeComponent],
+  imports: [IncidentModeComponent,RestModeComponent],
   templateUrl: './infoscreen.component.html',
   styleUrls: ['./infoscreen.component.scss']
 })

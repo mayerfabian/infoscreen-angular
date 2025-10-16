@@ -1,0 +1,131 @@
+/* GRID: 60% links, 40% rechts, volle Höhe */
+.screen-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 3fr 2fr;  /* 60/40 */
+  gap: 5px;
+}
+
+/* LINKE SPALTE: oberes Panel auto, unteres füllt Rest */
+.col-left {
+  display: grid;
+  grid-template-rows: auto 1fr;  /* Info: auto-Höhe | Rückmeldungen: Rest */
+  gap: 5px;
+  min-height: 0;
+}
+
+/* PANEL-GRUNDSTIL */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #15171b;
+  border: 1px solid #1f2229;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+  overflow: hidden;
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Titel links, Pill rechts */
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #1f2229;
+    flex: 0 0 auto;
+
+    h2 {
+      margin: 0;
+      font-size: clamp(16px, 2vw, 18px);
+      font-weight: 700;
+      letter-spacing: .2px;
+      color: #e7eaf0;
+    }
+
+    .header-right { display:flex; align-items:center; gap:8px; }
+  }
+
+  .panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px;
+    overflow: auto;
+  }
+}
+
+/* Zeit-Badge (rechts im Header) – dezent */
+.elapsed-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 800;
+  font-size: clamp(12px, 1.6vw, 16px);
+  line-height: 1.1;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+  white-space: nowrap;
+}
+
+/* Info-Body: Platz für Footer in der Ecke reservieren */
+.panel-info .info-body {
+  position: relative;
+  padding: 10px 12px 42px 12px; /* unten extra Platz, damit Footer nichts überdeckt */
+}
+
+/* Adresse & Bemerkung */
+.address {
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.1;
+  font-size: clamp(18px, 2.6vw, 30px);
+  letter-spacing: .2px;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.note {
+  color: #e7eaf0;
+  opacity: .95;
+  line-height: 1.25;
+  font-size: clamp(15px, 1.8vw, 18px);
+  white-space: pre-wrap;
+}
+
+/* Alarm-Datum/Zeit unten rechts im Info-Panel */
+.alarm-datetime {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  color: #cfd5de;
+  opacity: .95;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.alarm-datetime .date {
+  font-size: clamp(12px, 1.4vw, 14px);
+  opacity: .9;
+}
+.alarm-datetime .time {
+  font-size: clamp(13px, 1.6vw, 16px);
+  color: #ffffff;
+}
+
+/* RÜCKMELDE-PANEL */
+.panel-responses .responses-body { padding: 10px 12px; }
+
+/* KARTE rechts: füllt Höhe */
+.col-right .map-body { padding: 0; background: #fff; }
+.map-container { width: 100%; height: 100%; min-height: 0; }
+
+/* RESPONSIVE: unter 1100px einspaltig */
+@media (max-width:1100px){
+  .screen-grid{ grid-template-columns: 1fr; }
+  .col-left{ grid-template-rows: auto auto; }
+}

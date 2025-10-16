@@ -1,57 +1,135 @@
-import { Component } from '@angular/core';
-import { NgIf, NgFor, DatePipe, NgClass } from '@angular/common';
-import { ModeService, LeaPerson, Einsatz } from '../mode.service';
+import { Component, OnInit, OnDestroy, Type, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
+import { filter, Subject, takeUntil } from 'rxjs';
+import { ModeService, Einsatz } from '../mode.service';
+
+import { AlarmV1Component } from './alarm-v1/alarm-v1.component';
+import { AlarmV2Component } from './alarm-v2/alarm-v2.component';
 
 @Component({
   selector: 'app-incident-mode',
   standalone: true,
-  imports: [NgIf, NgFor, DatePipe, NgClass],
+  imports: [CommonModule, AlarmV1Component, AlarmV2Component],
   templateUrl: './incident-mode.component.html',
   styleUrls: ['./incident-mode.component.scss']
 })
-export class IncidentModeComponent {
-  constructor(public modeService: ModeService) {}
+export class IncidentModeComponent implements OnInit, OnDestroy {
+  activeCmp!: Type<any>;
+  outletInputs: Record<string, any> = {};
 
-  /** Hilfstext relativ (z.B. 'vor 3 Min') */
-  since(ts: number) {
-    const diff = Date.now() - ts;
-    if (diff < 60_000) return 'soeben';
-    const m = Math.floor(diff / 60_000);
-    if (m < 60) return `vor ${m} Min`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `vor ${h} Std`;
-    const d = Math.floor(h / 24);
-    return `vor ${d} Tg`;
-  }
+  /** aktuell angezeigter Einsatz */
+  einsatz: Einsatz | null = null;
 
-  countResponses(e: Einsatz) {
-    const ppl = e.alarmedpersons || [];
-    let yes = 0, no = 0, open = 0;
-    for (const p of ppl) {
-      const r = p.response?.basicresponse;
-      if (r === 'Ja') yes++;
-      else if (r === 'Nein') no++;
-      else open++;
+  /** Live-Uhrzeit für Header + Timer */
+  now = new Date();
+  private clockHandle: any;
+
+  private destroy$ = new Subject<void>();
+  private pollHandle: any;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    public modeService: ModeService
+  ) {}
+
+  ngOnInit(): void {
+    // Variante (V1/V2) initial + bei Navigation/Query wechseln
+    this.activeCmp = this.resolveVariantFromUrl(this.router.url, this.route);
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.activeCmp = this.resolveVariantFromUrl(this.router.url, this.route);
+        this.pushInputs();
+      });
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.activeCmp = this.resolveVariantFromUrl(this.router.url, this.route);
+        this.pushInputs();
+      });
+
+    // Einsatzdaten: bevorzugt Observable einsatz$, sonst Fallback-Polling
+    const asAny = this.modeService as any;
+    if (asAny && typeof asAny['einsatz$']?.subscribe === 'function') {
+      asAny['einsatz$']
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((val: Einsatz[] | Einsatz | null | undefined) => {
+          this.einsatz = Array.isArray(val) ? (val[0] ?? null) : (val ?? null);
+          this.pushInputs();
+        });
+    } else {
+      this.refreshEinsatz(); // initial
+      this.pollHandle = setInterval(() => this.refreshEinsatz(), 500);
     }
-    return { yes, no, open, total: ppl.length };
+
+    // Uhr jede Sekunde aktualisieren
+    this.clockHandle = setInterval(() => {
+      this.now = new Date();
+      this.cdr.markForCheck();
+    }, 1000);
+
+    // erste Inputs setzen
+    this.pushInputs();
   }
 
-  hasRole(p: LeaPerson, short: string) {
-    return (p.functions || []).some(f => f.shortname === short);
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.pollHandle) clearInterval(this.pollHandle);
+    if (this.clockHandle) clearInterval(this.clockHandle);
   }
 
-  /** Liste von Namen mit bestimmter Funktion und 'Ja' Rückmeldung */
-  namesByRoleYes(e: Einsatz, short: string): string[] {
-    const ppl = e.alarmedpersons || [];
-    return ppl.filter(p => this.hasRole(p, short) && p.response?.basicresponse === 'Ja')
-              .map(p => `${p.firstname} ${p.lastname}`);
+  private refreshEinsatz(): void {
+    try {
+      const list = this.modeService.einsatz?.() ?? [];
+      const next = (list && list.length) ? list[0] : null;
+      const changed =
+        (this.einsatz?.id !== next?.id) ||
+        (!!this.einsatz !== !!next);
+      if (changed) {
+        this.einsatz = next;
+        this.pushInputs();
+      }
+    } catch {
+      /* ignore */
+    }
   }
+
+  private pushInputs(): void {
+    this.outletInputs = { einsatz: this.einsatz };
+    this.cdr.markForCheck();
+  }
+
+  private resolveVariantFromUrl(url: string, r: ActivatedRoute): Type<any> {
+    const qp = r.snapshot.queryParamMap.get('view');
+    if (qp === 'v2') return AlarmV2Component;
+    if (qp === 'v1') return AlarmV1Component;
+    const lower = (url || '').toLowerCase();
+    if (lower.includes('/alarm2')) return AlarmV2Component;
+    const dataVariant = (r.snapshot.data?.['variant'] as 'v1' | 'v2' | undefined);
+    if (dataVariant === 'v2') return AlarmV2Component;
+    return AlarmV1Component;
+  }
+
+  /** Vergangene Zeit seit Alarm als HH:mm:ss */
+  elapsed(e: Einsatz | null | undefined): string {
+    if (!e?.alarmtime) return '—';
+    const ms = Math.max(0, this.now.getTime() - e.alarmtime);
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  } 
 
   meldebild(e?: Einsatz): string {
     if (!e) return 'ALARM';
     const typ = (e.eventtype || '').trim();
     const text = (e.eventtypetext || '').trim();
-    if (typ && text) return `${typ} – ${text}`;
-    return typ || text || 'ALARM';
+    return (typ && text) ? `${typ} – ${text}` : (typ || text || 'ALARM');
   }
 }

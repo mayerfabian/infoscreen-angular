@@ -13,20 +13,29 @@ export interface LeaPerson {
   functions: LeaFunction[];
   response: LeaResponse | null;
 }
-export interface LeaLocation {
-  city: string; zipcode: string; street: string; housenumber?: string;
-  x?: number; y?: number; objectname?: string; additionalinfo?: string;
-}
+
 export interface Einsatz {
   id: string;
   eventtype: string;
   eventtypetext: string;
-  location: LeaLocation;
   additionalinformation?: string;
   alarmtime: number; // Unix ms
   alarmedalarmgroups?: any[];
   alarmedpersons?: LeaPerson[];
   additionaldivisions?: any[];
+  location?: LeaLocation; 
+}
+
+export interface LeaLocation {
+  // alles optional, weil die API Felder weglassen/leer lassen kann
+  city?: string;
+  zipcode?: string;
+  street?: string;
+  housenumber?: string;
+  x?: number;
+  y?: number;
+  objectname?: string;
+  additionalinfo?: string;
 }
 
 /**

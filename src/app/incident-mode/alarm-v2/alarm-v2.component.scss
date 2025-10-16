@@ -1,0 +1,82 @@
+/* Einzelnes Panel füllt die gesamte Höhe */
+.panel {
+  display:flex; flex-direction:column;
+  height: 100%;
+  min-height: 0;
+  background:#15171b; border:1px solid #1f2229;
+  border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.4);
+  overflow:hidden;
+}
+
+.panel-header {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-bottom:1px solid #1f2229;
+  flex: 0 0 auto;
+}
+.panel-header h2 {
+  margin:0; font-size: clamp(16px, 2vw, 18px);
+  font-weight:700; letter-spacing:.2px; color:#e7eaf0;
+}
+
+/* Body füllt Rest; keine Scrollbar, Animation läuft innen */
+.panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 5px;          /* optional: etwas Innenluft innerhalb des Panels */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* --- Vollhöhe & „Bounce“-Scroll ohne Naht --- */
+.sv-viewport {
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  overflow:hidden;
+  background:#15171b;            /* kaschiert Subpixel-Linien */
+  --sv-duration: 50s;         /* via Template überschreibbar */
+  --sv-overlap: 1px;          /* Überlappung gegen Nähte */
+}
+@media (min-resolution: 2dppx) {
+  .sv-viewport { --sv-overlap: 0.5px; }
+}
+
+.sv-track {
+  display:flex; flex-wrap:nowrap;
+  gap:0; margin:0; padding:0;
+  align-items:stretch;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  animation: sv-bounce var(--sv-duration) ease-in-out infinite alternate;
+}
+
+/* Bilder füllen IMMER volle Höhe; minimale Überlappung zwischen Kacheln */
+.sv-img {
+  display:block;
+  height:100%;
+  width:auto;
+  margin:0; border:0; border-radius:0;
+  image-rendering:auto;
+  transform: translateZ(0);
+  will-change: transform;
+
+  /* Überlappung, um 1-px-Spalten zu verhindern */
+  & + .sv-img { margin-left: calc(var(--sv-overlap) * -1); }
+}
+
+/* Hin-und-her-Animation ohne sichtbaren Sprung */
+@keyframes sv-bounce {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }  /* ~ halbe Track-Breite für ruhige Bewegung */
+}
+
+/* Meta (optional) */
+.meta { display:grid; grid-template-columns:110px 1fr; gap:8px; }
+.meta .label { color:#9aa0aa; text-transform:uppercase; font-size:.75rem; align-self:center; }
+.meta .value { color:#fff; }
+.meta .coords { opacity:.75; margin-left:.5rem; }
+
+.alert { background:#23262d; color:#f7f8fa; border:1px solid #343a46; }

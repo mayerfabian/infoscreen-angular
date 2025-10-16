@@ -16,7 +16,7 @@ export interface EinsatzAPI {
 export interface EinsatzKurz {
   id: string;
   stichwort: string;
-  alarmstufe: string;
+  alarmstufe?: string;
   nummer: string;           // ELKOS-Nummer
   ort: string;
   ort2?: string;

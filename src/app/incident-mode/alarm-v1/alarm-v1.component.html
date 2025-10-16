@@ -1,0 +1,54 @@
+<div class="screen-grid">
+  <div class="col-left">
+    <!-- OBERES PANEL: auto-Höhe -->
+    <section class="panel panel-info">
+      <div class="panel-header">
+        <h2>Einsatzinfo</h2>
+        <!-- rechts im Header: verstrichene Zeit -->
+        <div class="header-right" *ngIf="einsatz as e">
+          <span class="elapsed-pill">+ {{ elapsedShort(e) }}</span>
+        </div>
+      </div>
+
+      <div class="panel-body info-body" *ngIf="einsatz as e">
+        <!-- Adresse -->
+        <ng-container *ngIf="e.location as loc">
+          <div class="address">
+            {{ loc.street }} <span *ngIf="loc.housenumber">{{ loc.housenumber }}</span><br>
+            {{ loc.zipcode }} {{ loc.city }}
+          </div>
+        </ng-container>
+
+        <!-- Bemerkung -->
+        <div class="note" *ngIf="e.additionalinformation as info">
+          {{ info }}
+        </div>
+
+        <!-- NEU: Datum & Uhrzeit des Alarms unten rechts -->
+        <div class="alarm-datetime">
+          <span class="date">{{ e.alarmtime | date:'EEEE, dd.MM.yyyy' }}</span>
+          <span class="time">{{ e.alarmtime | date:'HH:mm:ss' }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- UNTERES PANEL: Rückmeldungen – füllt Rest -->
+    <section class="panel panel-responses">
+      <div class="panel-header">
+        <h2>Rückmeldungen & Fähigkeiten</h2>
+      </div>
+      <div class="panel-body responses-body">
+        <!-- TODO: hier deine Rückmelde-Liste / -Gruppierung -->
+        <div class="text-muted">Rückmeldungen …</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RECHTE SPALTE: Karte (40% Breite) -->
+  <section class="panel col-right">
+    <div class="panel-header"><h2>Einsatzkarte</h2></div>
+    <div class="panel-body map-body">
+      <div id="incidentMapV1" class="map-container"></div>
+    </div>
+  </section>
+</div>

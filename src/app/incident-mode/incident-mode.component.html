@@ -1,94 +1,43 @@
-<div class="incident-screen">
+<!-- HEADER (knallrot) -->
 <header class="navbar navbar-expand alarm-red border-bottom shadow-sm sticky-top py-2">
   <div class="container-fluid align-items-center">
-    <!-- Left -->
+    <!-- Links: LEA-Logo -->
     <div class="navbar-brand d-flex align-items-center gap-2 me-auto" aria-label="LEA">
       <img src="assets/LEA_Blue-1.png" alt="LEA" class="logo-img" />
     </div>
 
-    <!-- Center -->
-    <div class="text-center flex-grow-1" *ngIf="modeService.einsatz()[0] as e">
+    <!-- Mitte: Titel + Adresse/Bemerkung -->
+    <div class="text-center flex-grow-1" *ngIf="einsatz as e">
       <div class="meldebild-title text-white fw-bold">{{ meldebild(e) }}</div>
+
       <div class="meldebild-sub text-white-50">
-        <span *ngIf="e.location">
-          {{ e.location?.street }} {{ e.location?.housenumber }},
-          {{ e.location?.zipcode }} {{ e.location?.city }}
-        </span>
-        <span *ngIf="!e.location && e.additionalinformation">{{ e.additionalinformation }}</span>
+        <ng-container *ngIf="e.location as loc; else infoTpl">
+          {{ loc.street }} <span *ngIf="loc.housenumber">{{ loc.housenumber }}</span>,
+          {{ loc.zipcode }} {{ loc.city }}
+        </ng-container>
+        <ng-template #infoTpl>
+          <span *ngIf="e.additionalinformation">{{ e.additionalinformation }}</span>
+        </ng-template>
       </div>
     </div>
 
-    <!-- Right: FF Logo -->
+    <!-- Rechts: FF-Logo -->
     <div class="ms-auto d-flex align-items-center">
-      <img src="assets/logo_ohne_text.png" alt="Feuerwehr-Logo" class="logo-img ff-logo" />
+      <img src="assets/logo_ohne_text.png" alt="Feuerwehr-Logo" class="logo-img" />
     </div>
-
   </div>
 </header>
 
-<!-- Knalliger roter Alarm-Ticker -->
+<!-- Gelb/Schwarz Ticker -->
 <div class="ticker flash"></div>
 
+<!-- Body: V1 oder V2 wird hier dynamisch eingeblendet, 'einsatz' als Input -->
+<div class="screen-content">
+  <ng-container *ngComponentOutlet="activeCmp; inputs: outletInputs"></ng-container>
 
-
-  <div class="container-fluid py-4">
-    <ng-container *ngIf="modeService.einsatz() as list; else noneTpl">
-      <div class="row g-4" *ngIf="list.length > 0; else noneTpl">
-        <div class="col-12 col-xl-6" *ngFor="let e of list">
-          <div class="card incident-card">
-            <div class="card-body">
-              <div class="d-flex align-items-start justify-content-between">
-                <div>
-                  <div class="h2 m-0 fw-bold">{{ e.eventtypetext || e.eventtype || 'Einsatz' }}</div>
-                  <div class="lead opacity-75">{{ e.eventtype }}</div>
-                </div>
-                <div class="time text-end">
-                  <div class="h4 m-0">{{ e.alarmtime | date:'HH:mm' }}</div>
-                  <small class="opacity-75">{{ since(e.alarmtime) }}</small>
-                </div>
-              </div>
-
-              <hr class="my-3" />
-
-              <div class="row gy-2">
-                <div class="col-12 col-lg-7">
-                  <div class="label">Ort</div>
-                  <div class="value">
-                    {{ e.location?.street }} {{ e.location?.housenumber }}<br/>
-                    {{ e.location?.zipcode }} {{ e.location?.city }}
-                  </div>
-                  <div class="small opacity-75" *ngIf="e.location?.objectname">{{ e.location?.objectname }}</div>
-                  <div class="small opacity-75" *ngIf="e.additionalinformation">{{ e.additionalinformation }}</div>
-                </div>
-                <div class="col-12 col-lg-5">
-                  <div class="label mb-1">Rückmeldungen</div>
-                  <ng-container *ngIf="countResponses(e) as c">
-                    <div class="d-flex gap-2 flex-wrap">
-                      <span class="badge rounded-pill bg-success-subtle text-success fw-semibold">Ja {{ c.yes }}</span>
-                      <span class="badge rounded-pill bg-danger-subtle text-danger fw-semibold">Nein {{ c.no }}</span>
-                      <span class="badge rounded-pill bg-secondary-subtle text-dark fw-semibold">Offen {{ c.open }}</span>
-                      <span class="badge rounded-pill bg-dark-subtle text-dark fw-semibold">Gesamt {{ c.total }}</span>
-                    </div>
-                  </ng-container>
-
-                  <div class="mt-3 small">
-                    <div *ngIf="namesByRoleYes(e, 'EL')?.length"><span class="role">EL:</span> {{ namesByRoleYes(e, 'EL').join(', ') }}</div>
-                    <div *ngIf="namesByRoleYes(e, 'C')?.length"><span class="role">C:</span> {{ namesByRoleYes(e, 'C').join(', ') }}</div>
-                    <div *ngIf="namesByRoleYes(e, 'ATS')?.length"><span class="role">ATS:</span> {{ namesByRoleYes(e, 'ATS').join(', ') }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-
-    <ng-template #noneTpl>
-      <div class="empty text-center py-5">
-        <div class="display-6">Keine aktiven Einsätze</div>
-        <div class="opacity-50">Der Alarmbildschirm schaltet automatisch auf Ruhe um.</div>
-      </div>
-    </ng-template>
-  </div>
+  <!-- (optional) Dummy-Use gegen AoT-Warnungen -->
+  <ng-template>
+    <app-alarm-v1></app-alarm-v1>
+    <app-alarm-v2></app-alarm-v2>
+  </ng-template>
 </div>
