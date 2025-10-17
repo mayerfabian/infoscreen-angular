@@ -1,44 +1,100 @@
 <section class="panel">
   <div class="panel-header">
-    <h2>Straßenansicht (Panorama)</h2>
-    <span class="ms-auto badge bg-dark-subtle text-dark" *ngIf="einsatz?.alarmtime as ts">
-      {{ ts | date:'dd.MM.yyyy · HH:mm' }}
-    </span>
-  </div>
+    <div class="left d-flex align-items-center gap-2">
+      <h2 class="mb-0">Straßenansicht</h2>
 
-  <div class="panel-body">
-    <div *ngIf="missingKey" class="alert alert-warning mb-3">
-      Kein Google Street View API-Key konfiguriert. Bitte
-      <code>environment.GOOGLE_STREETVIEW_KEY</code> setzen.
+      <!-- NEU: Street-View Status Badge -->
+      <span
+        class="sv-badge"
+        [class.ok]="!missingKey && svStatus==='ok'"
+        [class.none]="!missingKey && svStatus==='none'"
+        [class.checking]="!missingKey && svStatus==='checking'"
+        [class.error]="missingKey || svStatus==='error'">
+        <ng-container *ngIf="missingKey || svStatus==='error'">
+          Street View: Fehler / Key fehlt
+        </ng-container>
+        <ng-container *ngIf="!missingKey && svStatus==='checking'">
+          Street View: Suche …
+        </ng-container>
+        <ng-container *ngIf="!missingKey && svStatus==='ok'">
+          Street View: Verfügbar
+        </ng-container>
+        <ng-container *ngIf="!missingKey && svStatus==='none'">
+          Street View: Nicht gefunden
+        </ng-container>
+      </span>
     </div>
 
+    <div class="center header-actions">
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-light" (click)="goTo('v1')">Alarm 1</button>
+        <button type="button" class="btn btn-sm btn-light" (click)="goTo('v2')">Alarm 2</button>
+      </div>
+    </div>
+
+    <div class="right header-actions">
+      <input
+        type="text"
+        class="form-control form-control-sm coords-input"
+        [value]="coordString"
+        placeholder="47.70674113209871, 15.81706436958637"
+        #coordRef
+      />
+      <button class="btn btn-sm btn-primary" (click)="saveCoords(coordRef.value)">Speichern</button>
+    </div>
+  </div>
+
+  <div class="panel-body" #panelBody>
+    <!-- ETA-Overlay unten rechts -->
+    <div *ngIf="etaMinutes != null" class="eta-chip">
+      {{ etaMinutes }} min
+    </div>
+
+    <!-- Fehler Koordinaten-Eingabe -->
+    <div *ngIf="coordError" class="alert alert-danger py-1 px-2 mb-2">
+      {{ coordError }}
+    </div>
+
+    <!-- Koordinaten fehlen -->
     <div *ngIf="missingCoords" class="alert alert-warning mb-3">
       Keine Koordinaten in der Alarmierung (location.x / location.y).
     </div>
 
-    <!-- Vollhöhe + "Bounce"-Scroll (kein sichtbarer Sprung) -->
-    <ng-container *ngIf="!missingKey && !missingCoords">
-      <ng-container *ngIf="buildUrls() as urls">
+    <!-- Mit Koordinaten -->
+    <ng-container *ngIf="!missingCoords">
+      <!-- Street View aktiv & verfügbar -->
+      <ng-container *ngIf="!missingKey && svStatus === 'ok' && showStreetView; else showMap">
         <div class="sv-viewport" [style.--sv-duration]="scrollDurationSec + 's'">
-          <div class="sv-track bounce">
-            <img *ngFor="let url of urls"
+          <div class="sv-track">
+            <img *ngFor="let url of buildSvUrlsLoop()"
                  class="sv-img"
-                 [src]="url"
-                 alt="Street View"
-                 loading="lazy"
-                 referrerpolicy="no-referrer"
-                 crossorigin="anonymous" />
+                 [src]="url" alt="Street View"
+                 loading="lazy" referrerpolicy="no-referrer" crossorigin="anonymous" />
           </div>
         </div>
       </ng-container>
+
+      <!-- Map Fallback ODER alternierende Anzeige -->
+      <ng-template #showMap>
+        <div class="leaflet-box">
+          <div id="leafletV2Map"></div>
+        </div>
+      </ng-template>
     </ng-container>
 
-    <!-- Optional: Meta -->
+    <!-- Meta / Position -->
     <div class="meta mt-3" *ngIf="einsatz as e">
       <div class="label">Position</div>
-      <div class="value" *ngIf="e.location as loc">
-        {{ loc.street }} {{ loc.housenumber }}, {{ loc.zipcode }} {{ loc.city }}
-        <span class="coords">({{ loc.x }}, {{ loc.y }})</span>
+      <div class="value">
+        <ng-container *ngIf="displayAddress; else rawAddress">
+          {{ displayAddress }}
+        </ng-container>
+        <ng-template #rawAddress>
+          <ng-container *ngIf="e.location as loc">
+            {{ loc.street }} {{ loc.housenumber }}, {{ loc.zipcode }} {{ loc.city }}
+            <span class="coords">({{ loc.x }}, {{ loc.y }})</span>
+          </ng-container>
+        </ng-template>
       </div>
     </div>
   </div>

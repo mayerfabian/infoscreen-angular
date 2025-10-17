@@ -23,6 +23,21 @@
 
     <!-- Rechts: FF-Logo -->
     <div class="ms-auto d-flex align-items-center">
+            <div class="btn-group">
+        <button
+          type="button"
+          class="btn btn-sm"
+          [ngClass]="isActive('v1') ? 'btn-light' : 'btn-outline-light'"
+          (click)="go('v1')"
+        >Alarm 1</button>
+
+        <button
+          type="button"
+          class="btn btn-sm"
+          [ngClass]="isActive('v2') ? 'btn-light' : 'btn-outline-light'"
+          (click)="go('v2')"
+        >Alarm 2</button>
+      </div>
       <img src="assets/logo_ohne_text.png" alt="Feuerwehr-Logo" class="logo-img" />
     </div>
   </div>

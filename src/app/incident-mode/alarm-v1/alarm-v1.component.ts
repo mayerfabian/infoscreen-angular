@@ -6,7 +6,7 @@ import * as L from 'leaflet';
 @Component({
   selector: 'app-alarm-v1',
   standalone: true,
-  imports: [CommonModule, NgIf, NgForOf],
+  imports: [CommonModule, NgIf],
   templateUrl: './alarm-v1.component.html',
   styleUrls: ['./alarm-v1.component.scss']
 })

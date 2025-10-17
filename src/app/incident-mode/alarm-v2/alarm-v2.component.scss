@@ -1,82 +1,120 @@
-/* Einzelnes Panel füllt die gesamte Höhe */
 .panel {
   display:flex; flex-direction:column;
-  height: 100%;
-  min-height: 0;
+  height:100%; min-height:0;
   background:#15171b; border:1px solid #1f2229;
   border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.4);
   overflow:hidden;
 }
 
+/* Header mit Aktionen */
 .panel-header {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 12px; border-bottom:1px solid #1f2229;
-  flex: 0 0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; padding:10px 12px;
+  border-bottom:1px solid #1f2229; flex:0 0 auto;
 }
-.panel-header h2 {
-  margin:0; font-size: clamp(16px, 2vw, 18px);
-  font-weight:700; letter-spacing:.2px; color:#e7eaf0;
+.panel-header h2 { margin:0; font-size:clamp(16px,2vw,18px); font-weight:700; letter-spacing:.2px; color:#e7eaf0; }
+.header-actions { display:flex; align-items:center; gap:8px; }
+.coords-input {
+  min-width: 260px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* Body füllt Rest; keine Scrollbar, Animation läuft innen */
+/* ✨ NEU: Street-View Badge */
+.sv-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  user-select: none;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+.sv-badge::before {
+  content: '';
+  width:8px; height:8px; border-radius:9999px;
+  background: currentColor;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.15) inset;
+}
+
+/* Farben je Status */
+.sv-badge.ok       { color:#0f5132; background:#d1e7dd; border-color:#badbcc; }       /* grün */
+.sv-badge.none     { color:#842029; background:#f8d7da; border-color:#f5c2c7; }       /* rot (nicht gefunden) */
+.sv-badge.checking { color:#084298; background:#cfe2ff; border-color:#b6d4fe; }       /* blau (suche) */
+.sv-badge.error    { color:#664d03; background:#fff3cd; border-color:#ffecb5; }       /* gelb (key/fehler) */
+
+/* Body */
 .panel-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 5px;          /* optional: etwas Innenluft innerhalb des Panels */
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  position:relative; /* für ETA-Overlay */
+  flex:1 1 auto; min-height:0; padding:6px;
+  overflow:hidden; display:flex; flex-direction:column; gap:6px;
 }
 
-/* --- Vollhöhe & „Bounce“-Scroll ohne Naht --- */
+/* --- ETA Overlay unten rechts --- */
+.eta-chip {
+  position:absolute; right:12px; bottom:12px;
+  padding: 8px 14px;
+  font-weight: 800;
+  font-size: clamp(40px, 7.5vh, 64px); line-height: 1;
+  color: #000;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+  z-index: 5000;
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial;
+  text-shadow: 0 1px 0 rgba(255,255,255,.35), 0 0 6px rgba(255,255,255,.25);
+}
+
+/* --- Street-View Panorama --- */
 .sv-viewport {
-  flex:1 1 auto;
-  min-height:0;
-  width:100%;
-  overflow:hidden;
-  background:#15171b;            /* kaschiert Subpixel-Linien */
-  --sv-duration: 50s;         /* via Template überschreibbar */
-  --sv-overlap: 1px;          /* Überlappung gegen Nähte */
+  flex:1 1 auto; min-height:0; width:100%;
+  overflow:hidden; background:#000;
+  --sv-duration: 50s;
+  --sv-overlap: 1.25px;
 }
-@media (min-resolution: 2dppx) {
-  .sv-viewport { --sv-overlap: 0.5px; }
-}
+@media (min-resolution: 2dppx) { .sv-viewport { --sv-overlap: 0.75px; } }
 
 .sv-track {
-  display:flex; flex-wrap:nowrap;
-  gap:0; margin:0; padding:0;
-  align-items:stretch;
-  will-change: transform;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+  display:flex; flex-wrap:nowrap; gap:0; margin:0; padding:0; align-items:stretch;
+  will-change: transform; backface-visibility: hidden; transform: translateZ(0);
   animation: sv-bounce var(--sv-duration) ease-in-out infinite alternate;
 }
+@keyframes sv-bounce { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-/* Bilder füllen IMMER volle Höhe; minimale Überlappung zwischen Kacheln */
+@media (prefers-reduced-motion: reduce) {
+  .sv-track { animation: none; }
+}
+
 .sv-img {
-  display:block;
-  height:100%;
-  width:auto;
-  margin:0; border:0; border-radius:0;
-  image-rendering:auto;
-  transform: translateZ(0);
-  will-change: transform;
-
-  /* Überlappung, um 1-px-Spalten zu verhindern */
+  display:block; height:100%; width:auto; margin:0; border:0; border-radius:0;
+  image-rendering:auto; transform: translateZ(0); will-change: transform;
   & + .sv-img { margin-left: calc(var(--sv-overlap) * -1); }
 }
 
-/* Hin-und-her-Animation ohne sichtbaren Sprung */
-@keyframes sv-bounce {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }  /* ~ halbe Track-Breite für ruhige Bewegung */
+/* Leaflet Fallback */
+.leaflet-box { flex:1 1 auto; min-height:0; overflow:hidden; border-radius:8px; background:#0e0f12; }
+#leafletV2Map { width:100%; height:100%; }
+
+/* Flammen-Icon (Leaflet) */
+.flame-icon {
+  font-size: 34px;
+  line-height: 1;
+  text-shadow: 0 0 4px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.55);
 }
 
-/* Meta (optional) */
-.meta { display:grid; grid-template-columns:110px 1fr; gap:8px; }
+/* Meta/Position */
+.meta { display:grid; grid-template-columns:110px 1fr; gap:8px; margin-top:4px; }
 .meta .label { color:#9aa0aa; text-transform:uppercase; font-size:.75rem; align-self:center; }
 .meta .value { color:#fff; }
 .meta .coords { opacity:.75; margin-left:.5rem; }
 
 .alert { background:#23262d; color:#f7f8fa; border:1px solid #343a46; }
+.hint { color:#cfd5de; font-size:clamp(12px,1.4vw,14px); }
+.spinner {
+  width:26px; height:26px; border:3px solid rgba(255,255,255,.2);
+  border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

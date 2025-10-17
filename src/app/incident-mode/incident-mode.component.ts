@@ -21,7 +21,7 @@ export class IncidentModeComponent implements OnInit, OnDestroy {
   /** aktuell angezeigter Einsatz */
   einsatz: Einsatz | null = null;
 
-  /** Live-Uhrzeit für Header + Timer */
+  /** Live-Uhrzeit für Timer/Elapsed */
   now = new Date();
   private clockHandle: any;
 
@@ -38,12 +38,14 @@ export class IncidentModeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Variante (V1/V2) initial + bei Navigation/Query wechseln
     this.activeCmp = this.resolveVariantFromUrl(this.router.url, this.route);
+
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd), takeUntil(this.destroy$))
       .subscribe(() => {
         this.activeCmp = this.resolveVariantFromUrl(this.router.url, this.route);
         this.pushInputs();
       });
+
     this.route.queryParamMap
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -65,7 +67,7 @@ export class IncidentModeComponent implements OnInit, OnDestroy {
       this.pollHandle = setInterval(() => this.refreshEinsatz(), 500);
     }
 
-    // Uhr jede Sekunde aktualisieren
+    // Uhr jede Sekunde aktualisieren (für elapsed)
     this.clockHandle = setInterval(() => {
       this.now = new Date();
       this.cdr.markForCheck();
@@ -82,13 +84,21 @@ export class IncidentModeComponent implements OnInit, OnDestroy {
     if (this.clockHandle) clearInterval(this.clockHandle);
   }
 
+  /** Buttons im Header */
+  go(view: 'v1'|'v2'): void {
+    this.router.navigate([view === 'v1' ? '/alarm' : '/alarm2']);
+  }
+  isActive(view: 'v1'|'v2'): boolean {
+    const url = (this.router.url || '').toLowerCase();
+    if (view === 'v1') return url.includes('/alarm') && !url.includes('/alarm2');
+    return url.includes('/alarm2');
+  }
+
   private refreshEinsatz(): void {
     try {
       const list = this.modeService.einsatz?.() ?? [];
       const next = (list && list.length) ? list[0] : null;
-      const changed =
-        (this.einsatz?.id !== next?.id) ||
-        (!!this.einsatz !== !!next);
+      const changed = (this.einsatz?.id !== next?.id) || (!!this.einsatz !== !!next);
       if (changed) {
         this.einsatz = next;
         this.pushInputs();
@@ -124,7 +134,7 @@ export class IncidentModeComponent implements OnInit, OnDestroy {
     const s = totalSec % 60;
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
-  } 
+  }
 
   meldebild(e?: Einsatz): string {
     if (!e) return 'ALARM';
