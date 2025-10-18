@@ -24,11 +24,11 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   @ViewChild('panelBody') panelBodyRef?: ElementRef<HTMLDivElement>;
   private resizeObs?: ResizeObserver;
 
-  // --- Street View (4 Kacheln, Panorama-Bounce) ---
+  // --- Street View ---
   readonly fov = 90;
   readonly pitch = 0;
   readonly headings = [0, 90, 180, 270];
-  readonly STREETVIEW_RADIUS = 50; // 50 m, wie gewünscht
+  readonly STREETVIEW_RADIUS = 50; // m
   scrollDurationSec = 50;
 
   // States
@@ -62,10 +62,14 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   // Cache-Buster
   private bust = 0;
 
-  // --- NEU: Anzeige-Wechsel SV <-> Karte ---
-  showStreetView = true;               // start: SV, wenn verfügbar
-  private ALT_INTERVAL_MS = 15 * 1000; // 15 Sekunden
+  // Anzeige-Wechsel SV <-> Karte
+  showStreetView = false;               // Start: Karte
+  private ALT_MAP_MS = 15 * 1000;       // 15 s Karte
+  private ALT_SV_MS  = 7 * 1000;        // 7 s StreetView
   private altTimer?: any;
+
+  // Distanz-Schwelle
+  private readonly DISTANCE_LIMIT_KM = 2;
 
   constructor(private zone: NgZone, private router: Router) {}
 
@@ -90,7 +94,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.resizeObs?.disconnect();
     if (this.mapTick) clearInterval(this.mapTick);
-    if (this.altTimer) clearInterval(this.altTimer);
+    if (this.altTimer) clearTimeout(this.altTimer);
     this.map?.remove();
   }
 
@@ -102,9 +106,8 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
       this.coordError = null;
 
       if (!this.missingCoords) this.ensureLeaflet(true);
-      this.checkStreetViewAvailability();   // setzt svStatus
+      this.checkStreetViewAvailability();   // setzt svStatus und danach Timer
       this.fetchRouteAndAddress();          // ETA + Adresse
-      this.updateAlternateTimer();          // Timer je nach svStatus steuern
       setTimeout(() => this.recalcSizes(), 0);
     }
   }
@@ -115,6 +118,36 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   }
   get missingCoords(): boolean {
     return !(this.einsatz?.location?.x != null && this.einsatz?.location?.y != null);
+  }
+
+  // Distanz in km zwischen Feuerwehrhaus und Ziel
+  private distanceKm(): number | null {
+    const dLat = this.einsatz?.location?.x;
+    const dLon = this.einsatz?.location?.y;
+    if (dLat == null || dLon == null) return null;
+
+    const R = 6371; // km
+    const toRad = (v: number) => (v * Math.PI) / 180;
+    const dφ = toRad(dLat - this.FIREHOUSE.lat);
+    const dλ = toRad(dLon - this.FIREHOUSE.lon);
+    const φ1 = toRad(this.FIREHOUSE.lat);
+    const φ2 = toRad(dLat);
+
+    const a = Math.sin(dφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  /** Formatierte Distanz für die ETA-Blase */
+  get distanceDisplay(): string | null {
+    const d = this.distanceKm();
+    if (d == null) return null;
+    if (d < 1) {
+      const m = Math.round(d * 1000);
+      return `${m} m`;
+    }
+    const km = Math.round(d);
+    return `${km} km`;
   }
 
   // ---------------- Header-Buttons ----------------
@@ -133,7 +166,6 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     this.checkStreetViewAvailability();
     this.fetchRouteAndAddress();
     this.ensureLeaflet(true);
-    this.updateAlternateTimer();
     this.recalcSizes();
   }
 
@@ -220,7 +252,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     const sig = `${key}|${lat},${lon}`;
 
     if (this.lastCheckedKey === sig && (this.svStatus === 'ok' || this.svStatus === 'none')) {
-      // Status schon stabil → sicherstellen, dass Timer korrekt läuft
+      // Status stabil → Timer prüfen
       this.updateAlternateTimer();
       return;
     }
@@ -250,10 +282,8 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
       this.svStatus = 'error';
     }
 
-    // ⚠️ WICHTIG: Timer erst jetzt (nach finalem Status) setzen/aufräumen
     this.updateAlternateTimer();
-    }
-
+  }
 
   // ---------------- Route + Geocoding ----------------
   private ensureMapsScript(): Promise<void> {
@@ -322,133 +352,172 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
       this.routeStatus = 'ok';
       this.lastRouteKey = sig;
       this.ensureLeaflet(true);
+      this.refitMap(true); // nach Routing ggf. neu einpassen
     } catch {
       this.routeStatus = 'fail';
       this.ensureLeaflet(true);
+      this.refitMap(true);
     }
   }
 
-  // ---------------- Leaflet (blauer Pfad + Flammen-Icon aus Assets) ----------------
- private ensureLeaflet(refreshTiles = false): void {
-  const destLat = this.einsatz?.location?.x ?? null;
-  const destLon = this.einsatz?.location?.y ?? null;
-  if (destLat == null || destLon == null) return;
-
-  const container = document.getElementById('leafletV2Map') as HTMLElement | null;
-  if (!container) return;
-
-  const tileUrl = () => `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?ts=${this.bust}`;
-
-  // 👉 Pfade zu den SVGs (ggf. anpassen, falls anderer Ort)
-  const houseUrl = `assets/ffwh.svg?ts=${this.bust}`;
-  const flameUrl = `assets/flame.svg?ts=${this.bust}`;
-
-  // Feuerwehrhaus-Icon
-  const houseIcon = L.icon({
-    iconUrl: houseUrl,
-    iconSize: [45, 45],      // Größe nach Geschmack
-    iconAnchor: [23, 18],    // „Fuß“ sitzt am Standort
-    tooltipAnchor: [0, -40],
-    className: 'ffwh-svg-icon'
-  });
-
-  // Einsatz-Flammen-Icon
-  const flameIcon = L.icon({
-    iconUrl: flameUrl,
-    iconSize: [45, 45],
-    iconAnchor: [23, 23],
-    tooltipAnchor: [0, -44],
-    className: 'flame-svg-icon'
-  });
-
-  if (!this.mapInited) {
-    this.map = L.map(container, { zoomControl: false, attributionControl: true });
-    this.tileLayer = L.tileLayer(tileUrl(), {
-      maxZoom: 20,
-      attribution: '© OpenStreetMap'
-    }).addTo(this.map);
-
-    // Start (FF-Haus) als Marker mit SVG
-    this.startMarker = L.marker([this.FIREHOUSE.lat, this.FIREHOUSE.lon], { icon: houseIcon })
-      .addTo(this.map)
-      .bindTooltip('Feuerwehrhaus', { direction: 'top' });
-
-    // Ziel (Einsatzort) als Flammen-Icon
-    this.endMarker = L.marker([destLat, destLon], { icon: flameIcon })
-      .addTo(this.map)
-      .bindTooltip('Einsatzort', { direction: 'top' });
-
-    // Route in Blau
-    this.routeLayer = L.polyline([], {
-      color: '#1e90ff',
-      weight: 6,
-      opacity: 1.0,
-      lineJoin: 'round',
-      lineCap: 'round'
-    }).addTo(this.map);
-
-    this.mapInited = true;
-    setTimeout(() => this.map!.invalidateSize(), 0);
-  } else {
-    if (refreshTiles && this.tileLayer) this.tileLayer.setUrl(tileUrl());
-
-    // Icons ggf. neu setzen (falls Dateien/Größen geändert wurden)
-    if ((this.startMarker as any)?.setIcon) (this.startMarker as L.Marker).setIcon(houseIcon);
-    if (this.endMarker) this.endMarker.setIcon(flameIcon);
-
-    // Positionen aktualisieren
-    (this.startMarker as L.Marker)?.setLatLng([this.FIREHOUSE.lat, this.FIREHOUSE.lon]);
-    this.endMarker?.setLatLng([destLat, destLon]);
-
-    // Route-Stil sicherstellen
-    this.routeLayer?.setStyle({ color: '#1e90ff', weight: 6, opacity: 1.0 });
+  // ---------------- Sichtbarkeit/Refit-Helper ----------------
+  private isMapVisible(): boolean {
+    const el = document.getElementById('leafletV2Map') as HTMLElement | null;
+    if (!el) return false;
+    const box = el.parentElement as HTMLElement | null; // .leaflet-box
+    if (!box) return false;
+    const cs = getComputedStyle(box);
+    return cs.display !== 'none' && cs.opacity !== '0' && el.offsetWidth > 0 && el.offsetHeight > 0;
   }
 
-  // Routepunkte setzen (falls vorhanden)
-  if (this.routeLayer) this.routeLayer.setLatLngs(this.routeLatLngs);
+  private refitMap(force = false): void {
+    if (!this.map) return;
 
-  // Karte passend zoomen
-  const bounds = L.latLngBounds([
-    [this.FIREHOUSE.lat, this.FIREHOUSE.lon],
-    [destLat, destLon],
-    ...(this.routeLatLngs as any)
-  ]);
-  this.map!.fitBounds(bounds.pad(0.15), { animate: false });
-}
+    if (!force && !this.isMapVisible()) return;
 
+    this.map.invalidateSize();
 
-  // ---------------- NEU: Alternation Timer ----------------
-  private updateAlternateTimer(): void {
-    // immer aufräumen
-    if (this.altTimer) { clearInterval(this.altTimer); this.altTimer = undefined; }
+    const pts: L.LatLngExpression[] = [];
+    pts.push([this.FIREHOUSE.lat, this.FIREHOUSE.lon]);
 
-    // Nur alternieren, wenn Street View verfügbar
-    if (!this.missingKey && this.svStatus === 'ok') {
-      // Startansicht: Street View
-      this.showStreetView = true;
+    const destLat = this.einsatz?.location?.x ?? null;
+    const destLon = this.einsatz?.location?.y ?? null;
+    if (destLat != null && destLon != null) pts.push([destLat, destLon]);
 
-      this.altTimer = setInterval(() => {
-        // Falls SV zwischenzeitlich wegfällt → dauerhaft Karte
-        if (this.svStatus !== 'ok') {
-          this.zone.run(() => { this.showStreetView = false; });
-          clearInterval(this.altTimer); this.altTimer = undefined;
-          return;
-        }
+    if (this.routeLatLngs && this.routeLatLngs.length) {
+      pts.push(...this.routeLatLngs);
+    }
 
-        // Toggle innerhalb der Angular-Zone, damit Template aktualisiert
-        this.zone.run(() => {
-          this.showStreetView = !this.showStreetView;
-          if (!this.showStreetView) {
-            // beim Wechsel zur Karte: Map sicher aktualisieren
-            this.ensureLeaflet(false);
-            setTimeout(() => this.map?.invalidateSize(), 50);
-          }
-        });
-      }, this.ALT_INTERVAL_MS);
+    if (pts.length >= 2) {
+      const b = L.latLngBounds(pts as any);
+      // dichteres Padding, danach noch eine Stufe näher (max. 18)
+      this.map.fitBounds(b.pad(0.05), { animate: false, maxZoom: 18 });
+      const curZ = this.map.getZoom() ?? 0;
+      const center = b.getCenter();
+      this.map.setView(center, Math.min(18, curZ ), { animate: false });
+    } else if (destLat != null && destLon != null) {
+      this.map.setView([destLat, destLon], 18, { animate: false });
+    }
+  }
+
+  // ---------------- Leaflet (blauer Pfad + SVG-Icons) ----------------
+  private ensureLeaflet(refreshTiles = false): void {
+    const destLat = this.einsatz?.location?.x ?? null;
+    const destLon = this.einsatz?.location?.y ?? null;
+    if (destLat == null || destLon == null) return;
+
+    const container = document.getElementById('leafletV2Map') as HTMLElement | null;
+    if (!container) return;
+
+    const tileUrl = () => `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?ts=${this.bust}`;
+
+    // SVGs (Pfad ggf. anpassen)
+    const houseUrl = `assets/ffwh.svg?ts=${this.bust}`;
+    const flameUrl = `assets/flame.svg?ts=${this.bust}`;
+
+    const houseIcon = L.icon({
+      iconUrl: houseUrl,
+      iconSize: [45, 45],
+      iconAnchor: [23, 18],
+      tooltipAnchor: [0, -40],
+      className: 'ffwh-svg-icon'
+    });
+
+    const flameIcon = L.icon({
+      iconUrl: flameUrl,
+      iconSize: [45, 45],
+      iconAnchor: [23, 23],
+      tooltipAnchor: [0, -44],
+      className: 'flame-svg-icon'
+    });
+
+    if (!this.mapInited) {
+      this.map = L.map(container, { zoomControl: false, attributionControl: true });
+      this.tileLayer = L.tileLayer(tileUrl(), {
+        maxZoom: 20,
+        attribution: '© OpenStreetMap'
+      }).addTo(this.map);
+
+      this.startMarker = L.marker([this.FIREHOUSE.lat, this.FIREHOUSE.lon], { icon: houseIcon })
+        .addTo(this.map)
+        .bindTooltip('Feuerwehrhaus', { direction: 'top' });
+
+      this.endMarker = L.marker([destLat, destLon], { icon: flameIcon })
+        .addTo(this.map)
+        .bindTooltip('Einsatzort', { direction: 'top' });
+
+      this.routeLayer = L.polyline([], {
+        color: '#1e90ff',
+        weight: 6,
+        opacity: 1.0,
+        lineJoin: 'round',
+        lineCap: 'round'
+      }).addTo(this.map);
+
+      this.mapInited = true;
     } else {
-      // Kein Street View → Karte
-      this.showStreetView = false;
+      if (refreshTiles && this.tileLayer) this.tileLayer.setUrl(tileUrl());
+
+      if (this.startMarker) this.startMarker.setIcon(houseIcon).setLatLng([this.FIREHOUSE.lat, this.FIREHOUSE.lon]);
+      if (this.endMarker)   this.endMarker.setIcon(flameIcon).setLatLng([destLat, destLon]);
+
+      this.routeLayer?.setStyle({ color: '#1e90ff', weight: 6, opacity: 1.0 });
     }
+
+    // Routepunkte aktualisieren
+    if (this.routeLayer) this.routeLayer.setLatLngs(this.routeLatLngs);
+
+    // Refit nur, wenn sichtbar – sonst später beim Umschalten
+    this.refitMap(false);
   }
 
+  // ---------------- Alternation Timer (SV <-> Karte) ----------------
+  private updateAlternateTimer(): void {
+    // Aufräumen
+    if (this.altTimer) { clearTimeout(this.altTimer); this.altTimer = undefined; }
+
+    // Distanz-Regel
+    const dist = this.distanceKm();
+    const tooFar = dist != null && dist > this.DISTANCE_LIMIT_KM;
+
+    // Bedingungen prüfen: SV nur wenn verfügbar und nicht zu weit
+    const canAlternate = !this.missingKey && this.svStatus === 'ok' && !tooFar;
+
+    // Startansicht immer Karte
+    this.showStreetView = false;
+    requestAnimationFrame(() => {
+      this.ensureLeaflet(false);
+      this.refitMap(true);
+    });
+
+    if (!canAlternate) {
+      // dauerhaft Karte
+      return;
+    }
+
+    // Wechsel-Loop mit unterschiedlichen Phasenlängen (15s Map → 7s SV → 15s Map ...)
+    const runCycle = () => {
+      // Phase 1: MAP sichtbar (bereits aktiv). Nach ALT_MAP_MS → SV
+      this.altTimer = setTimeout(() => {
+        if (this.svStatus !== 'ok') return; // Sicherheit
+        this.zone.run(() => {
+          this.showStreetView = true;   // fade-in SV
+        });
+
+        // Phase 2: nach ALT_SV_MS → zurück zu MAP
+        this.altTimer = setTimeout(() => {
+          this.zone.run(() => {
+            this.showStreetView = false; // fade zurück zu Map
+            requestAnimationFrame(() => {
+              this.ensureLeaflet(false);
+              requestAnimationFrame(() => this.refitMap(true));
+            });
+          });
+          runCycle();
+        }, this.ALT_SV_MS);
+      }, this.ALT_MAP_MS);
+    };
+
+    runCycle();
+  }
 }

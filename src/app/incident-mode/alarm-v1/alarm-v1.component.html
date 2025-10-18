@@ -1,30 +1,26 @@
 <div class="screen-grid">
   <div class="col-left">
-    <!-- OBERES PANEL: auto-Höhe -->
+    <!-- OBERES PANEL: Einsatzinfo (unverändert) -->
     <section class="panel panel-info">
       <div class="panel-header">
         <h2>Einsatzinfo</h2>
-        <!-- rechts im Header: verstrichene Zeit -->
         <div class="header-right" *ngIf="einsatz as e">
           <span class="elapsed-pill">+ {{ elapsedShort(e) }}</span>
         </div>
       </div>
 
       <div class="panel-body info-body" *ngIf="einsatz as e">
-        <!-- Adresse -->
         <ng-container *ngIf="e.location as loc">
           <div class="address">
-            {{ loc.street }} <span *ngIf="loc.housenumber">{{ loc.housenumber }}</span><br>
+            {{ loc.street }} <span *ngIf="loc.housenumber">{{ loc.housenumber }}</span><br />
             {{ loc.zipcode }} {{ loc.city }}
           </div>
         </ng-container>
 
-        <!-- Bemerkung -->
         <div class="note" *ngIf="e.additionalinformation as info">
           {{ info }}
         </div>
 
-        <!-- NEU: Datum & Uhrzeit des Alarms unten rechts -->
         <div class="alarm-datetime">
           <span class="date">{{ e.alarmtime | date:'EEEE, dd.MM.yyyy' }}</span>
           <span class="time">{{ e.alarmtime | date:'HH:mm:ss' }}</span>
@@ -32,19 +28,92 @@
       </div>
     </section>
 
-    <!-- UNTERES PANEL: Rückmeldungen – füllt Rest -->
+    <!-- UNTERES PANEL: Rückmeldungen & Fähigkeiten -->
     <section class="panel panel-responses">
       <div class="panel-header">
         <h2>Rückmeldungen & Fähigkeiten</h2>
       </div>
-      <div class="panel-body responses-body">
-        <!-- TODO: hier deine Rückmelde-Liste / -Gruppierung -->
-        <div class="text-muted">Rückmeldungen …</div>
-      </div>
+
+      <div class="panel-body responses-body" [class.dense]="dense">
+        <!-- A) Rückmeldungen (oben): zuerst ZUSAGEN, dann ABSAGEN; kein Scroll, overflow hidden -->
+        <div class="responses-top">
+          <div class="people-list">
+            <!-- ZUSAGEN -->
+            <div class="person yes" *ngFor="let p of peopleYes">
+              <span class="flag yes" aria-hidden="true"></span>
+              <span class="name">{{ p.name }}</span>
+              <span class="role-pill rp-el"    *ngIf="p.roles.includes('EL')">EL</span>
+              <span class="role-pill rp-elmit" *ngIf="p.roles.includes('ELMIT')">EL</span>
+              <span class="role-pill rp-ats"   *ngIf="p.roles.includes('ATS')">ATS</span>
+              <span class="role-pill rp-c"     *ngIf="p.roles.includes('C')">C</span>
+            </div>
+            <!-- ABSAGEN -->
+            <div class="person no" *ngFor="let p of peopleNo">
+              <span class="flag no" aria-hidden="true"></span>
+              <span class="name">{{ p.name }}</span>
+              <span class="role-pill rp-el"    *ngIf="p.roles.includes('EL')">EL</span>
+              <span class="role-pill rp-elmit" *ngIf="p.roles.includes('ELMIT')">EL</span>
+              <span class="role-pill rp-ats"   *ngIf="p.roles.includes('ATS')">ATS</span>
+              <span class="role-pill rp-c"     *ngIf="p.roles.includes('C')">C</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="sep" />
+
+        <!-- B) Funktions-Karten unten -->
+        <div class="roles-bottom">
+          <div class="role-grid">
+            <!-- EL -->
+            <div class="role-card el">
+              <div class="head">
+                <div class="title">EL</div>
+                <div class="count">{{ roleBoxes[0]?.yesCount ?? 0 }}</div>
+              </div>
+              <div class="names" *ngIf="roleBoxes[0]?.showNames && roleBoxes[0]?.yesNames?.length">
+                <div class="n" *ngFor="let n of roleBoxes[0].yesNames">{{ n }}</div>
+              </div>
+            </div>
+
+            <!-- Einsatzleitung (EL - Mit) -->
+            <div class="role-card elmit">
+              <div class="head">
+                <div class="title">EINSATZLEITUNG</div>
+                <div class="count">{{ roleBoxes[1]?.yesCount ?? 0 }}</div>
+              </div>
+              <div class="names" *ngIf="roleBoxes[1]?.showNames && roleBoxes[1]?.yesNames?.length">
+                <div class="n" *ngFor="let n of roleBoxes[1].yesNames">{{ n }}</div>
+              </div>
+            </div>
+
+            <!-- ATS -->
+            <div class="role-card ats">
+              <div class="head">
+                <div class="title">ATS</div>
+                <div class="count">{{ roleBoxes[2]?.yesCount ?? 0 }}</div>
+              </div>
+              <div class="names" *ngIf="roleBoxes[2]?.showNames && roleBoxes[2]?.yesNames?.length">
+                <div class="n" *ngFor="let n of roleBoxes[2].yesNames">{{ n }}</div>
+              </div>
+            </div>
+
+            <!-- C-Fahrer -->
+            <div class="role-card cdriver">
+              <div class="head">
+                <div class="title">C-FAHRER</div>
+                <div class="count">{{ roleBoxes[3]?.yesCount ?? 0 }}</div>
+              </div>
+              <div class="names" *ngIf="roleBoxes[3]?.showNames && roleBoxes[3]?.yesNames?.length">
+                <div class="n" *ngFor="let n of roleBoxes[3].yesNames">{{ n }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- panel-body -->
     </section>
   </div>
 
-  <!-- RECHTE SPALTE: Karte (40% Breite) -->
+  <!-- RECHTE SPALTE: Karte (unverändert) -->
   <section class="panel col-right">
     <div class="panel-header"><h2>Einsatzkarte</h2></div>
     <div class="panel-body map-body">

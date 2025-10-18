@@ -1,52 +1,515 @@
 [
-  {
-    "id": "136964",
-    "eventtypetext": "Ölspur",
-    "eventtype": "S1",
-    "location": {
-      "city": "Würflach",
-      "zipcode": "2732",
-      "street": "Gerasdorfer Strasse",
-      "housenumber": "58",
-      "x": 47.77128205123649,
-      "y": 16.069913615194245,
-      "objectname": "",
-      "additionalinfo": ""
-    },
-    "additionalinformation": "A15425SR (13:55) S1 Ölspur. Neubau, Gerasdorfer Strasse 58, 2732 Würflach: PKW mit Getriebeschaden",
-    "alarmtime": 1760270132000,
-    "alarmedalarmgroups": [
-      { "id": "A15425SR", "name": "NK - FF Würflach-Hettmannsdorf - Sammelruf" }
-    ],
-    "alarmedpersons": [
-      {
-        "id": "1",
-        "firstname": "Fabian",
-        "lastname": "Mayer",
-        "functions": [
-          { "id": "1961", "shortname": "EL", "name": "Einsatzleiter" },
-          { "id": "158972", "shortname": "C", "name": "C-Fahrer" }
+    {
+        "id": "136964",
+        "eventtypetext": "\u00d6lspur",
+        "eventtype": "S1",
+        "location": {
+            "city": "W\u00fcrflach",
+            "zipcode": "2732",
+            "street": "Gerasdorfer Strasse",
+            "housenumber": "58",
+            "x": 47.776183,
+            "y": 16.055902,
+            "objectname": "",
+            "additionalinfo": ""
+        },
+        "additionalinformation": "A15425SR (13:55) S1 \u00d6lspur. Neubau, Gerasdorfer Strasse 58, 2732 W\u00fcrflach: PKW mit Getriebeschaden (47.7762, 16.0559)",
+        "alarmtime": 1760270132000,
+        "alarmedalarmgroups": [
+            {
+                "id": "A15425SR",
+                "name": "NK - FF W\u00fcrflach-Hettmannsdorf - Sammelruf"
+            }
         ],
-        "response": { "timestamp": 1760270241000, "basicresponse": "Ja", "freetext": "" }
-      },
-      {
-        "id": "2",
-        "firstname": "Johannes",
-        "lastname": "Lebel",
-        "functions": [
-          { "id": "14445", "shortname": "ATS", "name": "Atemschutz" }
+        "alarmedpersons": [
+            {
+                "id": "3df5a8d43b2dc8cfe0630d06420a39ba",
+                "firstname": "Andreas",
+                "lastname": "Fritz",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c7ef24e033fd2e0630d06420ad74a",
+                "firstname": "Bernhard",
+                "lastname": "Fritz",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "31eec5d6486afb08e0630b06420a212f",
+                "firstname": "Birgit",
+                "lastname": "Grashofer",
+                "qualifications": [],
+                "functions": [],
+                "response": null
+            },
+            {
+                "id": "3025ee57293482dce0630b06420acb3c",
+                "firstname": "David",
+                "lastname": "Hammer",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "2f6fa1f18e7500a0e0630d06420ab31e",
+                "firstname": "Fabian",
+                "lastname": "Mayer",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "194184",
+                        "shortname": "EL - Mit",
+                        "name": "EL - Mitarbeiter"
+                    },
+                    {
+                        "id": "1961",
+                        "shortname": "EL",
+                        "name": "Einsatzleiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "31eea99dad673e5ce0630b06420afac0",
+                "firstname": "Florian",
+                "lastname": "Bock",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "194184",
+                        "shortname": "EL - Mit",
+                        "name": "EL - Mitarbeiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c7ef24e043fd2e0630d06420ad74a",
+                "firstname": "Florian",
+                "lastname": "Mayrhofer",
+                "qualifications": [],
+                "functions": [],
+                "response": {
+                    "timestamp": 1760270241000,
+                    "basicresponse": "Nein",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c6d41a6912f74e0630b06420add63",
+                "firstname": "Florian",
+                "lastname": "Woltron",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "1961",
+                        "shortname": "EL",
+                        "name": "Einsatzleiter"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c6ee2208239b7e0630b06420a4687",
+                "firstname": "Gerhard",
+                "lastname": "Bock",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c4a5e5aeaa134e0630d06420af908",
+                "firstname": "Gerhard",
+                "lastname": "Riegler",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "31ee8d5df7edd45ce0630b06420ac13e",
+                "firstname": "Ingo",
+                "lastname": "Grashofer",
+                "qualifications": [],
+                "functions": [],
+                "response": null
+            },
+            {
+                "id": "31d6272fde3b15ace0630d06420a59c3",
+                "firstname": "Jakob",
+                "lastname": "P\u00f6pperl",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": {
+                    "timestamp": 1760270253000,
+                    "basicresponse": "Ja",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c7ef24e013fd2e0630d06420ad74a",
+                "firstname": "Johann",
+                "lastname": "H\u00f6dl",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "194184",
+                        "shortname": "EL - Mit",
+                        "name": "EL - Mitarbeiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": {
+                    "timestamp": 1760270368000,
+                    "basicresponse": "Nein",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c7e2ea6a7b18ce0630b06420a81e8",
+                "firstname": "Johann",
+                "lastname": "Woltron",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "1961",
+                        "shortname": "EL",
+                        "name": "Einsatzleiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": {
+                    "timestamp": 1760270199000,
+                    "basicresponse": "Nein",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c5fe876cad35fe0630b06420ae182",
+                "firstname": "Johannes",
+                "lastname": "Lebel",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "194184",
+                        "shortname": "EL - Mit",
+                        "name": "EL - Mitarbeiter"
+                    },
+                    {
+                        "id": "1961",
+                        "shortname": "EL",
+                        "name": "Einsatzleiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c6d3e56c4c4a0e0630d06420a0210",
+                "firstname": "J\u00fcrgen",
+                "lastname": "Hofsteter",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": {
+                    "timestamp": 1760270179000,
+                    "basicresponse": "Nein",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c81bbb9215304e0630d06420afb28",
+                "firstname": "Katharina",
+                "lastname": "Lethmayer",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c6d3e56c3c4a0e0630d06420a0210",
+                "firstname": "Lukas",
+                "lastname": "Woltron",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "302c5fe876c9d35fe0630b06420ae182",
+                "firstname": "Martin",
+                "lastname": "Kirner",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "1961",
+                        "shortname": "EL",
+                        "name": "Einsatzleiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    }
+                ],
+                "response": {
+                    "timestamp": 1760270320000,
+                    "basicresponse": "Nein",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c7ef24e023fd2e0630d06420ad74a",
+                "firstname": "Michael",
+                "lastname": "Gruber",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "1961",
+                        "shortname": "EL",
+                        "name": "Einsatzleiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "3025e353456a2ff8e0630b06420a1cda",
+                "firstname": "Natalie",
+                "lastname": "Mayer",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": {
+                    "timestamp": 1760272387000,
+                    "basicresponse": "Ja",
+                    "freetext": ""
+                }
+            },
+            {
+                "id": "302c7e2ea6abb18ce0630b06420a81e8",
+                "firstname": "Roman",
+                "lastname": "Lass",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            },
+            {
+                "id": "3025e39920aef905e0630d06420a3b57",
+                "firstname": "Tina",
+                "lastname": "Woltron",
+                "qualifications": [],
+                "functions": [
+                    {
+                        "id": "194184",
+                        "shortname": "EL - Mit",
+                        "name": "EL - Mitarbeiter"
+                    },
+                    {
+                        "id": "158972",
+                        "shortname": "C",
+                        "name": "C-Fahrer"
+                    },
+                    {
+                        "id": "14445",
+                        "shortname": "ATS",
+                        "name": "ATS"
+                    }
+                ],
+                "response": null
+            }
         ],
-        "response": { "timestamp": 1760270253000, "basicresponse": "Nein", "freetext": "" }
-      },
-      {
-        "id": "3",
-        "firstname": "Katharina",
-        "lastname": "Lethmayer",
-        "functions": [
-          { "id": "14445", "shortname": "ATS", "name": "Atemschutz" }
-        ],
-        "response": null
-      }
-    ]
-  }
+        "additionaldivisions": [
+            {
+                "name": "AT-3-FW",
+                "type": "Feuerwehr",
+                "organizationalunits": [
+                    {
+                        "oeid": "1299",
+                        "description": "BFKDO Neunkirchen",
+                        "type": "BFKDO",
+                        "alarmtime": 1760273235300,
+                        "alarmgroups": [
+                            {
+                                "id": "18760",
+                                "name": "Einsatzinfo BFKDO Neunkirchen - \u00d6A-Team"
+                            }
+                        ]
+                    },
+                    {
+                        "oeid": "1390",
+                        "description": "FF Willendorf (NK)",
+                        "type": "FF",
+                        "alarmtime": 1760273235300,
+                        "alarmgroups": [
+                            {
+                                "id": "7999",
+                                "name": "NK - FF Willendorf - Sammelruf"
+                            }
+                        ]
+                    },
+                    {
+                        "oeid": "1966",
+                        "description": "N\u00d6 LFV Infoschiene",
+                        "type": "LFV",
+                        "alarmtime": 1760273235300,
+                        "alarmgroups": [
+                            {
+                                "id": "10065",
+                                "name": "N\u00d6 Landesfeuerwehrverband-Infodienst - S1"
+                            }
+                        ]
+                    },
+                    {
+                        "oeid": "1963",
+                        "description": "LFKDO Nieder\u00f6sterreich",
+                        "type": "LFKDO",
+                        "alarmtime": 1760273235300,
+                        "alarmgroups": [
+                            {
+                                "id": "18025",
+                                "name": "N\u00d6 Landesfeuerwehrverband-Infodienst - S1"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
 ]

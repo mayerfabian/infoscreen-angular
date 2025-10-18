@@ -2,8 +2,7 @@
   <div class="panel-header">
     <div class="left d-flex align-items-center gap-2">
       <h2 class="mb-0">Straßenansicht</h2>
-
-      <!-- NEU: Street-View Status Badge -->
+      <!-- Status-Badge -->
       <span
         class="sv-badge"
         [class.ok]="!missingKey && svStatus==='ok'"
@@ -45,9 +44,12 @@
   </div>
 
   <div class="panel-body" #panelBody>
-    <!-- ETA-Overlay unten rechts -->
-    <div *ngIf="etaMinutes != null" class="eta-chip">
-      {{ etaMinutes }} min
+    <!-- ETA-Overlay unten rechts: Distanz + Minuten -->
+    <div *ngIf="(etaMinutes != null) || (distanceDisplay != null)" class="eta-chip">
+      <ng-container *ngIf="distanceDisplay">{{ distanceDisplay }}</ng-container>
+      <ng-container *ngIf="etaMinutes != null">
+        <span *ngIf="distanceDisplay"> — </span>{{ etaMinutes }} min
+      </ng-container>
     </div>
 
     <!-- Fehler Koordinaten-Eingabe -->
@@ -62,9 +64,13 @@
 
     <!-- Mit Koordinaten -->
     <ng-container *ngIf="!missingCoords">
-      <!-- Street View aktiv & verfügbar -->
-      <ng-container *ngIf="!missingKey && svStatus === 'ok' && showStreetView; else showMap">
-        <div class="sv-viewport" [style.--sv-duration]="scrollDurationSec + 's'">
+      <!-- Stack: beide Ansichten übereinander, weiches Überblenden -->
+      <div class="view-stack">
+        <!-- Street View (bleibt im DOM) -->
+        <div
+          class="sv-viewport fade-layer"
+          [style.--sv-duration]="scrollDurationSec + 's'"
+          [class.is-hidden]="missingKey || svStatus !== 'ok' || !showStreetView">
           <div class="sv-track">
             <img *ngFor="let url of buildSvUrlsLoop()"
                  class="sv-img"
@@ -72,14 +78,12 @@
                  loading="lazy" referrerpolicy="no-referrer" crossorigin="anonymous" />
           </div>
         </div>
-      </ng-container>
 
-      <!-- Map Fallback ODER alternierende Anzeige -->
-      <ng-template #showMap>
-        <div class="leaflet-box">
+        <!-- Karte (bleibt im DOM) -->
+        <div class="leaflet-box fade-layer" [class.is-hidden]="showStreetView && (!missingKey && svStatus==='ok')">
           <div id="leafletV2Map"></div>
         </div>
-      </ng-template>
+      </div>
     </ng-container>
 
     <!-- Meta / Position -->
