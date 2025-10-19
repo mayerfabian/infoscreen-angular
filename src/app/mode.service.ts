@@ -1,87 +1,120 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { timer, switchMap, catchError, of } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  Subscription,
+  catchError,
+  of,
+  switchMap,
+  timer,
+} from 'rxjs';
+import type { Einsatz } from './models/lea.interfaces';
 
-/** LEA JSON Typen (vereinfacht an das Beispiel angepasst) */
-export interface LeaFunction { id: string; shortname: string; name: string; }
-export interface LeaResponse { timestamp: number; basicresponse: 'Ja' | 'Nein' | string; freetext: string; }
-export interface LeaPerson {
-  id: string;
-  firstname: string;
-  lastname: string;
-  qualifications: any[];
-  functions: LeaFunction[];
-  response: LeaResponse | null;
-}
+export type ScreenMode = 'ruhe' | 'einsatz';
+type ManualOverride = 'none' | ScreenMode;
 
-export interface Einsatz {
-  id: string;
-  eventtype: string;
-  eventtypetext: string;
-  additionalinformation?: string;
-  alarmtime: number; // Unix ms
-  alarmedalarmgroups?: any[];
-  alarmedpersons?: LeaPerson[];
-  additionaldivisions?: any[];
-  location?: LeaLocation; 
-}
-
-export interface LeaLocation {
-  // alles optional, weil die API Felder weglassen/leer lassen kann
-  city?: string;
-  zipcode?: string;
-  street?: string;
-  housenumber?: string;
-  x?: number;
-  y?: number;
-  objectname?: string;
-  additionalinfo?: string;
-}
-
-/**
- * ModeService hält:
- * - aktuellen Modus (ruhe|einsatz)
- * - aktuelle Einsätze (LEA-Schema)
- * - Historie (optional)
- *
- * Endpoints bitte anpassen auf eure Backend-URL.
- */
 @Injectable({ providedIn: 'root' })
 export class ModeService {
-  private leaActiveUrl = 'assets/mock/lea-active.json';
-  private leaHistoryUrl = 'assets/mock/lea-active.json'; // optional
+  /** Datenquellen */
+  private readonly liveUrl = 'https://info.ff-wuerflach.at/lea.php';
+  private readonly mockUrl = 'assets/mock/lea-active.json';
 
-  private modeSignal = signal<'ruhe' | 'einsatz'>('ruhe');
+  /** Aktuelle Quelle (live | mock) wird per Subject gesteuert */
+  private source$ = new BehaviorSubject<'live' | 'mock'>('live');
+
+  /** Automatik-Modus (aus Polling) */
+  private autoModeSignal = signal<ScreenMode>('ruhe');
+
+  /** Manuelles Test-/Override-Flag (nur für explizit 'ruhe'/'einsatz') */
+  private manualOverrideSignal = signal<ManualOverride>('none');
+
+  /** Daten */
   private einsatzSignal = signal<Einsatz[]>([]);
-  private historySignal = signal<Einsatz[]>([]);
 
-  /** API */
-  readonly mode = computed(() => this.modeSignal());
-  readonly einsatz = computed(() => this.einsatzSignal());
-  readonly history = computed(() => this.historySignal());
+  /** Öffentliche Read-APIs */
+  readonly einsaetze = computed<Einsatz[]>(() => this.einsatzSignal());
+
+  /** Effektiver Modus: Override > Automatik */
+  readonly mode = computed<ScreenMode>(() => {
+    const manual = this.manualOverrideSignal();
+    return manual === 'none' ? this.autoModeSignal() : manual;
+  });
+
+  /** Bequeme booleans */
+  readonly isEinsatz = computed<boolean>(() => this.mode() === 'einsatz');
+  readonly isRuhe    = computed<boolean>(() => this.mode() === 'ruhe');
+
+  /** Polling-Abo, damit wir beim Source-Switch sauber neu subscriben */
+  private pollSub?: Subscription;
 
   constructor(private http: HttpClient) {
-    // Aktive Einsätze pollen
-    timer(0, 10_000).pipe(
-      switchMap(() => this.http.get<Einsatz[]>(this.leaActiveUrl)
-        .pipe(catchError(() => of([] as Einsatz[])))
+    // Polling: reagiert auf Source-Wechsel und pollt dann die jeweilige URL
+    this.pollSub = this.source$
+      .pipe(
+        switchMap((source) => {
+          const url = source === 'mock' ? this.mockUrl : this.liveUrl;
+          return timer(0, 10_000).pipe(
+            switchMap(() =>
+              this.http.get<Einsatz[] | any>(url).pipe(
+                // Das Live-Endpoint kann z.B. {einsaetze: []} oder [] liefern – normalize:
+                switchMap((raw) => {
+                  let list: Einsatz[] = [];
+                  if (Array.isArray(raw)) {
+                    list = raw as Einsatz[];
+                  } else if (raw && Array.isArray(raw.einsaetze)) {
+                    list = raw.einsaetze as Einsatz[];
+                  } else if (raw && Array.isArray(raw.data)) {
+                    list = raw.data as Einsatz[];
+                  }
+                  return of(list);
+                }),
+                catchError(() => of([] as Einsatz[]))
+              )
+            )
+          );
+        })
       )
-    ).subscribe(list => {
-      const safe = Array.isArray(list) ? list : [];
-      this.einsatzSignal.set(safe);
-      this.modeSignal.set(safe.length > 0 ? 'einsatz' : 'ruhe');
-    });
+      .subscribe((list) => {
+        const safe = Array.isArray(list) ? list : [];
+        this.einsatzSignal.set(safe);
+        this.autoModeSignal.set(safe.length > 0 ? 'einsatz' : 'ruhe');
+      });
 
-    // Historie optional pollen (seltener)
-    timer(0, 60_000).pipe(
-      switchMap(() => this.http.get<Einsatz[]>(this.leaHistoryUrl)
-        .pipe(catchError(() => of([] as Einsatz[])))
-      )
-    ).subscribe(list => this.historySignal.set(Array.isArray(list) ? list : []));
+    // Beim ersten Start Query berücksichtigen (nur Datenquelle & optionaler Explizit-Override)
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const test = (qs.get('test') || '').toLowerCase();
+
+      if (test === '1') {
+        this.useMockData(true);      // Testdaten verwenden
+        this.clearManualOverride();  // kein Modus-Override
+      } else {
+        this.useMockData(false);     // Live
+      }
+
+      // Optional: expliziter Modus-Override falls gewünscht
+      if (test === 'ruhe')  this.setManualOverride('ruhe');
+      if (test === 'einsatz') this.setManualOverride('einsatz');
+    } catch {
+      // SSR/ohne window: ignorieren → default live
+    }
   }
 
-  /** Manuelles Umschalten, z.B. für Tests */
-  setModeManually(mode: 'ruhe' | 'einsatz') {
-    this.modeSignal.set(mode);
+  /** Extern aufrufbar (z.B. aus Infoscreen): Live/Mock wählen */
+  useMockData(enable: boolean) {
+    const next = enable ? 'mock' : 'live';
+    if (this.source$.value !== next) this.source$.next(next);
+  }
+
+  /** Für Buttons/Tests manuell setzen (nur für explizite ruhe/einsatz) */
+  setModeManually(mode: ScreenMode) {
+    this.setManualOverride(mode);
+  }
+  setManualOverride(mode: ScreenMode) {
+    this.manualOverrideSignal.set(mode);
+  }
+  clearManualOverride() {
+    this.manualOverrideSignal.set('none');
   }
 }

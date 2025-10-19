@@ -1,0 +1,84 @@
+:host { display:block; width:100%; height:100%; }
+
+/* Inhalt = volle Bildschirmhöhe; keine globale Scrollbar */
+.restv2-content { height:100%; min-height:0; overflow:hidden; padding:12px; }
+
+/* Gleich hohe Panels pro Zeile; max. Höhe = Content-Höhe */
+.restv2-grid {
+  display:flex; flex-wrap:wrap; gap:16px; align-items:stretch; height:100%;
+}
+
+/* Panel im v1-Look; Höhe an Content gekoppelt */
+.restv2-card {
+  flex:1 1 360px;
+  display:flex; flex-direction:column;
+  min-height:420px; max-height:100%; height:100%;
+  border-radius:16px; overflow:hidden; background-clip:padding-box; isolation:isolate;
+  background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  color:#e9ecef;
+}
+
+.restv2-card__header{
+  padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.08);
+  background:rgba(0,0,0,0.15); backdrop-filter:blur(4px);
+  border-top-left-radius:inherit; border-top-right-radius:inherit;
+}
+
+.restv2-card__title{ display:flex; align-items:baseline; gap:10px; margin-bottom:2px; }
+.restv2-card__einsatznr{ font-weight:700; font-size:16px; color:#fff; }
+.restv2-card__alarmstufe{ font-weight:600; font-size:14px; color:#cfd6e4; }
+
+.restv2-card__subtitle{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  font-size:13px; color:rgba(255,255,255,0.75);
+}
+
+/* Body füllt Rest; innen eigener Scrollbereich */
+.restv2-card__body{
+  display:flex; flex-direction:column; gap:10px;
+  padding:12px 14px 14px 14px; min-height:0; flex:1 1 auto; overflow:hidden;
+}
+
+.restv2-card__grund{ font-size:14px; color:#e9ecef; }
+
+/* Fixierte Fades im Wrapper; Liste darunter scrollt */
+.restv2-logwrap{
+  position:relative; height:100%; min-height:0; overflow:hidden;
+}
+.restv2-logwrap::before,
+.restv2-logwrap::after{
+  content:""; position:absolute; left:0; right:0; height:24px; pointer-events:none;
+  opacity:0; transition:opacity 160ms linear;
+}
+.restv2-logwrap::before{ top:0; background:linear-gradient(to bottom, rgba(11,13,16,1), rgba(11,13,16,0)); }
+.restv2-logwrap::after{ bottom:0; background:linear-gradient(to top, rgba(11,13,16,1), rgba(11,13,16,0)); }
+/* Sichtbarkeit nur wenn nicht am Rand */
+.restv2-logwrap:not(.at-top)::before{ opacity:1; }
+.restv2-logwrap:not(.at-bottom)::after{ opacity:1; }
+
+/* Die eigentliche scrollende Liste */
+.restv2-loglist{
+  position:relative; height:100%; min-height:0;
+  overflow:auto; display:flex; flex-direction:column; gap:8px;
+  scrollbar-width:none; -ms-overflow-style:none;
+  scroll-behavior: auto; /* wichtig: kein Smooth-Stacking */
+}
+.restv2-loglist::-webkit-scrollbar{ display:none; }
+
+.restv2-logitem{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:8px 10px;
+}
+.restv2-logitem__head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.restv2-chip{ display:inline-block; padding:3px 8px; font-size:12px; border-radius:999px;
+  background:rgba(138,180,255,0.12); color:#8ab4ff; border:1px solid rgba(138,180,255,0.35);
+}
+.restv2-time{ font-size:12px; color:rgba(255,255,255,0.75); }
+.restv2-logitem__text{ font-size:13px; color:#e9ecef; white-space:pre-wrap; word-break:break-word; }
+.restv2-fzg{ font-weight:600; margin-right:6px; color:#cfe1ff; }
+.restv2-author{ margin-left:6px; color:rgba(255,255,255,0.7); }
+
+.restv2-empty{ height:100%; display:grid; place-items:center; font-size:16px; color:rgba(255,255,255,0.75); }

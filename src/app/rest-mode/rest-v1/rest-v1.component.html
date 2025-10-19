@@ -1,0 +1,57 @@
+<div class="screen-grid">
+  <!-- LINKE SPALTE: 2 Reihen -->
+  <section class="col-left two-rows">
+    <!-- Oben: UWZ -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="badge text-bg-primary">WETTER</span>
+        <h2>UWZ Unwetterkarte</h2>
+      </div>
+      <div class="panel-body">
+        <div class="uwz-wrapper">
+          <img
+            [src]="uwzUrl"
+            alt="Unwetterkarte Österreich"
+            class="uwz-image"
+            loading="eager"
+            decoding="sync"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Unten: Aktuelle Einsätze / Torstatus -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="badge text-bg-danger">EINSÄTZE</span>
+        <h2>Aktuelle Einsätze im Bezirk</h2>
+      </div>
+      <div class="panel-body">
+        <div class="scroll-shell">
+          <div class="scroll-fade">
+            <!-- WICHTIG: Kind-Komponente füllt den Bereich, scrollt aber NICHT selbst -->
+            <app-torstatus-panel class="fill no-internal-scroll"></app-torstatus-panel>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECHTE SPALTE: 1 Reihe (Kalender) -->
+  <section class="col-right one-row">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="badge text-bg-info">KALENDER</span>
+        <h2>Terminplan</h2>
+      </div>
+      <div class="panel-body">
+        <div class="scroll-shell">
+          <div class="scroll-fade">
+            <!-- WICHTIG: Kind-Komponente füllt den Bereich, scrollt aber NICHT selbst -->
+            <app-calendar-panel class="fill no-internal-scroll"></app-calendar-panel>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

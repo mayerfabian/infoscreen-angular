@@ -1,57 +1,49 @@
-import { Component, OnDestroy, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, OnDestroy } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { ModeService } from '../mode.service';
+
 import { IncidentModeComponent } from '../incident-mode/incident-mode.component';
 import { RestModeComponent } from '../rest-mode/rest-mode.component';
-import { ModeService } from '../mode.service';
+
+type Variant = 'v1' | 'v2';
 
 @Component({
   selector: 'app-infoscreen',
   standalone: true,
-  imports: [IncidentModeComponent,RestModeComponent],
+  imports: [IncidentModeComponent, RestModeComponent],
   templateUrl: './infoscreen.component.html',
-  styleUrls: ['./infoscreen.component.scss']
+  styleUrls: ['./infoscreen.component.scss'],
 })
 export class InfoscreenComponent implements OnDestroy {
-  now = signal(new Date());
-  timestamp = Date.now();
+  private sub?: Subscription;
 
-  private t = setInterval(() => {
-    this.now.set(new Date());
-    this.timestamp = Date.now();
-  }, 1000);
-  private time = setInterval(() => this.now.set(new Date()), 1000);
-  private reload = setInterval(() => this.reloadIframes(),5* 60 * 1000); // alle 5 Min
-  url = "https://uwz.at/data/previews/AT_warning_today_all_desktop.png?cache="+this.timestamp;
-  // src/app/infoscreen/infoscreen.component.ts
-  constructor(public mode: ModeService) {}
+  /** Varianten aus der URL (bleiben wie gehabt) */
+  incidentVariant: Variant = 'v1';
+  restVariant: Variant = 'v1';
 
+  constructor(public mode: ModeService, private route: ActivatedRoute) {
+    // LIVE auf ?test=..., ?incident=..., ?rest=... reagieren
+    this.sub = this.route.queryParamMap.subscribe((q) => {
+      // --- TESTDATEN: ?test=1 → Mock, sonst Live
+      const test = (q.get('test') || '').toLowerCase();
+      this.mode.useMockData(test === '1');
 
-  reloadIframes() {
-    const iframes = document.querySelectorAll('iframe');
+      // --- OPTIONAL: expliziter Modus-Override (nur wenn ruhe/einsatz)
+      if (test === 'ruhe')      this.mode.setManualOverride('ruhe');
+      else if (test === 'einsatz') this.mode.setManualOverride('einsatz');
+      else                        this.mode.clearManualOverride();
 
-    iframes.forEach((frame: HTMLIFrameElement) => {
-      // sanftes Ausblenden
-      frame.style.transition = 'opacity 0.5s ease';
-      frame.style.opacity = '0.1';
+      // Varianten lesen
+      const inc = (q.get('incident') || q.get('view') || '').toLowerCase();
+      this.incidentVariant = inc === 'v2' ? 'v2' : 'v1';
 
-      setTimeout(() => {
-        const src = frame.src;
-        frame.src = src;
-      }, 500); // nach dem Fade-Out neu laden
-
-      // nach 3 Sekunden wieder einblenden (genug Zeit für Laden)
-      setTimeout(() => {
-        frame.style.opacity = '1';
-      }, 3000);
+      const rest = (q.get('rest') || '').toLowerCase();
+      this.restVariant = rest === 'v2' ? 'v2' : 'v1';
     });
-
-    console.log('Iframes reloaded with fade effect');
   }
 
-
   ngOnDestroy() {
-    clearInterval(this.t);
-    clearInterval(this.time);
-    clearInterval(this.reload);
+    this.sub?.unsubscribe();
   }
 }

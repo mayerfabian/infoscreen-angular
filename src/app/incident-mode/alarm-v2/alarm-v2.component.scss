@@ -19,7 +19,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
-/* ✨ NEU: Street-View Badge */
+/* ✨ Street-View Status-Badge */
 .sv-badge {
   display:inline-flex; align-items:center; gap:6px;
   padding: 2px 8px;
@@ -37,26 +37,28 @@
   background: currentColor;
   box-shadow: 0 0 0 2px rgba(255,255,255,.15) inset;
 }
-
 /* Farben je Status */
-.sv-badge.ok       { color:#0f5132; background:#d1e7dd; border-color:#badbcc; }       /* grün */
-.sv-badge.none     { color:#842029; background:#f8d7da; border-color:#f5c2c7; }       /* rot (nicht gefunden) */
-.sv-badge.checking { color:#084298; background:#cfe2ff; border-color:#b6d4fe; }       /* blau (suche) */
-.sv-badge.error    { color:#664d03; background:#fff3cd; border-color:#ffecb5; }       /* gelb (key/fehler) */
+.sv-badge.ok       { color:#0f5132; background:#d1e7dd; border-color:#badbcc; }
+.sv-badge.none     { color:#842029; background:#f8d7da; border-color:#f5c2c7; }
+.sv-badge.checking { color:#084298; background:#cfe2ff; border-color:#b6d4fe; }
+.sv-badge.error    { color:#664d03; background:#fff3cd; border-color:#ffecb5; }
 
 /* Body */
 .panel-body {
   position:relative; /* für ETA-Overlay */
-  flex:1 1 auto; min-height:0; padding:6px;
+  flex:1 1 auto; min-height:0;
+  padding:6px;
+  background:#15171b;
   overflow:hidden; display:flex; flex-direction:column; gap:6px;
 }
 
-/* --- ETA Overlay unten rechts --- */
+/* --- ETA Overlay unten rechts (Distanz + Minuten) --- */
 .eta-chip {
   position:absolute; right:12px; bottom:12px;
   padding: 8px 14px;
   font-weight: 800;
-  font-size: clamp(40px, 7.5vh, 64px); line-height: 1;
+  font-size: clamp(40px, 7.5vh, 64px);
+  line-height: 1;
   color: #000;
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(255,255,255,.2);
@@ -68,16 +70,40 @@
   text-shadow: 0 1px 0 rgba(255,255,255,.35), 0 0 6px rgba(255,255,255,.25);
 }
 
-/* --- Street-View Panorama --- */
+/* --- Stack für SV <-> Karte mit weichem Fade --- */
+.view-stack {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background:#15171b;
+}
+.fade-layer {
+  position: absolute;
+  inset: 0;
+  transition: opacity 400ms ease;
+  opacity: 1;
+}
+.fade-layer.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Street-View Panorama: 4 Kacheln, Überlappung, Bounce --- */
 .sv-viewport {
-  flex:1 1 auto; min-height:0; width:100%;
-  overflow:hidden; background:#000;
+  height: 100%;
+  width:100%;
+  overflow:hidden;
+  background:#15171b;
   --sv-duration: 50s;
   --sv-overlap: 1.25px;
 }
 @media (min-resolution: 2dppx) { .sv-viewport { --sv-overlap: 0.75px; } }
 
+/* ⬅️ WICHTIG: Track bekommt volle Höhe */
 .sv-track {
+  height: 100%;
   display:flex; flex-wrap:nowrap; gap:0; margin:0; padding:0; align-items:stretch;
   will-change: transform; backface-visibility: hidden; transform: translateZ(0);
   animation: sv-bounce var(--sv-duration) ease-in-out infinite alternate;
@@ -88,21 +114,32 @@
   .sv-track { animation: none; }
 }
 
+/* Bilder füllen IMMER volle Höhe; minimale Überlappung zwischen Kacheln */
 .sv-img {
-  display:block; height:100%; width:auto; margin:0; border:0; border-radius:0;
-  image-rendering:auto; transform: translateZ(0); will-change: transform;
+  display:block;
+  height:100%;
+  width:auto;
+  margin:0; border:0; border-radius:0;
+  image-rendering:auto;
+  transform: translateZ(0);
+  will-change: transform;
+
+  /* Überlappung, um 1-px-Spalten zu verhindern */
   & + .sv-img { margin-left: calc(var(--sv-overlap) * -1); }
 }
 
-/* Leaflet Fallback */
-.leaflet-box { flex:1 1 auto; min-height:0; overflow:hidden; border-radius:8px; background:#0e0f12; }
+/* --- Leaflet Fallback / Karte --- */
+.leaflet-box {
+  height:100%; width:100%;
+  overflow:hidden;
+  background:#15171b;
+}
 #leafletV2Map { width:100%; height:100%; }
 
-/* Flammen-Icon (Leaflet) */
-.flame-icon {
-  font-size: 34px;
-  line-height: 1;
-  text-shadow: 0 0 4px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.55);
+/* SVG-Icons */
+.ffwh-svg-icon,
+.flame-svg-icon {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.45));
 }
 
 /* Meta/Position */
@@ -111,6 +148,7 @@
 .meta .value { color:#fff; }
 .meta .coords { opacity:.75; margin-left:.5rem; }
 
+/* Hinweise/Spinner */
 .alert { background:#23262d; color:#f7f8fa; border:1px solid #343a46; }
 .hint { color:#cfd5de; font-size:clamp(12px,1.4vw,14px); }
 .spinner {

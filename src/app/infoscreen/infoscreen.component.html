@@ -1,6 +1,5 @@
-@if(mode.mode() === 'einsatz'){
-  <app-incident-mode></app-incident-mode>
-
-}@else {
-  <app-rest-mode></app-rest-mode>
+@if (mode.isEinsatz()) {
+  <app-incident-mode [variant]="incidentVariant" />
+} @else {
+  <app-rest-mode [variant]="restVariant" />
 }

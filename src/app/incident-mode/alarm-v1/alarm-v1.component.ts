@@ -1,16 +1,19 @@
 import {
-  Component, AfterViewInit, OnDestroy, NgZone, Input, OnChanges, SimpleChanges
+  Component, AfterViewInit, OnDestroy, NgZone, Input,
+  OnChanges, SimpleChanges, OnInit
 } from '@angular/core';
 import { CommonModule, NgIf, NgFor } from '@angular/common';
-import { Einsatz, LeaPerson } from '../../mode.service';
+import { ActivatedRoute } from '@angular/router';
+import { Einsatz, LeaPerson } from '../../models/lea.interfaces';
 import * as L from 'leaflet';
 
 type Resp = 'yes' | 'no' | 'open';
 
 interface PersonView {
   name: string;
-  resp: Resp;          // yes | no (open wird ignoriert)
-  roles: ('EL'|'ELMIT'|'ATS'|'C')[];  // für Badges neben dem Namen
+  resp: Resp;                               // yes | no (open wird ignoriert)
+  roles: ('EL'|'ELMIT'|'ATS'|'C')[];        // für optionale Badges in der Liste
+  freeText?: string | null;                 // Freitext aus response.freetext (nur sinnvoll bei "no")
 }
 
 interface RoleBox {
@@ -28,9 +31,10 @@ interface RoleBox {
   templateUrl: './alarm-v1.component.html',
   styleUrls: ['./alarm-v1.component.scss']
 })
-export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
+export class AlarmV1Component implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @Input() einsatz: Einsatz | null = null;
-
+  /** Optional: aktuelle Zeit (für Elapsed/Timer-Anzeigen) */
+  @Input() now: Date = new Date();
   // --- Karte (rechter Bereich) ---
   private map?: L.Map;
   private marker?: L.Marker;
@@ -38,7 +42,7 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
   private mapInterval?: any;
 
   // --- Uhr für „Seit Alarm“ (oben links im Info-Panel) ---
-  now = new Date();
+  // now = new Date();
   private clockHandle?: any;
 
   // --- Rückmeldungen & Rollen (linkes unteres Panel) ---
@@ -52,18 +56,34 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
     { key: 'C',     label: 'C-Fahrer',       yesNames: [], yesCount: 0, showNames: true }
   ];
 
+  /** Wenn irgendeine Rolle >6 Zusagen hat → Namen unten ausblenden & Badges in der Liste zeigen */
+  showBadgesPerUser = false;
+
   /** Typo-Dichte: ab 30 Rückmeldungen kleiner */
   dense = false;
 
-  constructor(private zone: NgZone) {}
+  /** Optionaler URL-Parameter `?user=25` → begrenzt die ANZAHL der geladenen Personen */
+  private userLimit: number | null = null;
+
+  /** Gefilterte, alarmierte Wachen (Badges im Info-Panel) */
+  stations: string[] = [];
+
+  constructor(private zone: NgZone, private route: ActivatedRoute) {}
 
   // ---------------- Lifecycle ----------------
+  ngOnInit(): void {
+    this.readUserLimitFromRoute();
+    this.route.queryParamMap.subscribe(() => {
+      const before = this.userLimit;
+      this.readUserLimitFromRoute();
+      if (before !== this.userLimit) this.recomputePeopleAndRoles();
+    });
+  }
+
   ngAfterViewInit(): void {
-    // Karte im Intervall aktualisieren (Größe/Koordinaten)
     this.zone.runOutsideAngular(() => {
       this.mapInterval = setInterval(() => this.ensureMap(), 300);
     });
-    // „Seit Alarm“ jede Sekunde
     this.clockHandle = setInterval(() => { this.now = new Date(); }, 1000);
   }
 
@@ -76,8 +96,14 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if ('einsatz' in changes) {
       this.recomputePeopleAndRoles();
-      // Map-Update läuft über Intervall
     }
+  }
+
+  // ---------------- URL Param ----------------
+  private readUserLimitFromRoute(): void {
+    const raw = this.route.snapshot.queryParamMap.get('user');
+    const n = raw != null ? Number(raw) : NaN;
+    this.userLimit = Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
   }
 
   // ---------------- Helpers ----------------
@@ -114,13 +140,30 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
     return Array.from(new Set(keys));
   }
 
+  /** Filtert alarmierte Wachen (FF), keine Info-Schienen */
+  private computeStations(): string[] {
+    const divs = this.einsatz?.additionaldivisions ?? [];
+    const out: string[] = [];
+    for (const d of divs as any[]) {
+      const units = d?.organizationalunits ?? [];
+      for (const ou of units) {
+        const type = (ou?.type ?? '').toString().toUpperCase();
+        const label = (ou?.description || ou?.name || '').toString().trim();
+        if (!label) continue;
+        if (type === 'FF' && !/info/i.test(label)) out.push(label);
+      }
+    }
+    return Array.from(new Set(out)).sort((a, b) => a.localeCompare(b, 'de'));
+  }
+
   private recomputePeopleAndRoles(): void {
     const MAX_SHOW_NAMES = 6;  // Wenn eine Kategorie > 6 → überall Namen aus
     const MAX_LISTED = 5;      // Falls Namen gezeigt werden: max. so viele
 
+    this.stations = this.computeStations();
+
     this.peopleYes = [];
     this.peopleNo  = [];
-    // RoleBoxes zurücksetzen
     this.roleBoxes = [
       { key: 'EL',    label: 'EL',             yesNames: [], yesCount: 0, showNames: true },
       { key: 'ELMIT', label: 'Einsatzleitung', yesNames: [], yesCount: 0, showNames: true },
@@ -128,14 +171,18 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
       { key: 'C',     label: 'C-Fahrer',       yesNames: [], yesCount: 0, showNames: true }
     ];
 
-    const ppl = this.einsatz?.alarmedpersons ?? [];
-    for (const p of ppl) {
+    // Quelle ggf. begrenzen
+    const srcAll = this.einsatz?.alarmedpersons ?? [];
+    const src = this.userLimit != null ? srcAll.slice(0, this.userLimit) : srcAll;
+
+    for (const p of src) {
       const name = `${(p as any).firstname ?? ''} ${(p as any).lastname ?? ''}`.trim();
       const resp = this.normResp((p as any).response?.basicresponse);
-      if (resp === 'open') continue; // „offen“ ignorieren
+      if (resp === 'open') continue;
       const roles = this.roleKeysForPerson(p as LeaPerson);
+      const freeText = (p as any).response?.freetext?.toString()?.trim() || null;
 
-      const view: PersonView = { name, resp, roles };
+      const view: PersonView = { name, resp, roles, freeText };
       if (resp === 'yes') this.peopleYes.push(view);
       else this.peopleNo.push(view);
 
@@ -147,15 +194,17 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
       }
     }
 
-    // alphabetisch sortieren
-    this.peopleYes.sort((a,b)=>a.name.localeCompare(b.name));
-    this.peopleNo.sort((a,b)=>a.name.localeCompare(b.name));
+    // sortieren
+    this.peopleYes.sort((a,b)=>a.name.localeCompare(b.name,'de'));
+    this.peopleNo.sort((a,b)=>a.name.localeCompare(b.name,'de'));
 
     // Counts & globale Darstellungslogik
-    for (const box of this.roleBoxes) {
-      box.yesCount = box.yesNames.length;
-    }
+    for (const box of this.roleBoxes) box.yesCount = box.yesNames.length;
     const anyTooMany = this.roleBoxes.some(b => b.yesCount > MAX_SHOW_NAMES);
+
+    // → globales Flag für Badges in der Liste
+    this.showBadgesPerUser = anyTooMany;
+
     for (const box of this.roleBoxes) {
       if (anyTooMany) {
         box.showNames = false;
@@ -166,9 +215,8 @@ export class AlarmV1Component implements AfterViewInit, OnDestroy, OnChanges {
       }
     }
 
-    // Typo-Dichte setzen: ab 30 Rückmeldungen (ja + nein) verkleinern
-    const totalResponses = this.peopleYes.length + this.peopleNo.length;
-    this.dense = totalResponses >= 30;
+    const totalShown = this.peopleYes.length + this.peopleNo.length;
+    this.dense = totalShown >= 30;
   }
 
   // ---------------- Map (rechter Bereich) ----------------

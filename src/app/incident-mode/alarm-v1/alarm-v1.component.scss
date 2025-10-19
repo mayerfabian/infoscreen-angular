@@ -27,6 +27,17 @@
 .panel-info .info-body { position:relative; padding-bottom:36px; }
 .address { color:#fff; font-size:clamp(18px,2.2vw,24px); line-height:1.2; }
 .note { margin-top:6px; color:#cfd5de; font-size:clamp(14px,1.8vw,18px); }
+
+/* Alarmierte Wachen (Badges) */
+.stations { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.station-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:4px 10px; border-radius:9999px; font-weight:900; letter-spacing:.2px;
+  background:#d0002a; color:#fff; border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 2px 8px rgba(0,0,0,.25), inset 0 -10px 24px rgba(0,0,0,.12);
+  white-space:nowrap;
+}
+
 .header-right .elapsed-pill {
   display:inline-flex; align-items:center; justify-content:center;
   padding:2px 10px; border-radius:999px; font-weight:800;
@@ -43,113 +54,85 @@
 .panel-responses .panel-body {
   display:flex; flex-direction:column;
   gap:12px; min-height:0;
-}
-
-/* Separator */
-.sep {
-  border: 0; height: 1px;
-  background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.25), rgba(255,255,255,.06));
-  margin: 2px 0 4px 0;
-}
-
-/* A) Rückmeldungen oben – ohne Scroll, overflow hidden max-height: 34vh;  */
-.responses-top { overflow: hidden; min-height: 0; }
-.people-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px 22px;
-}
-.person {
-  display:flex; align-items:center; gap:10px;
-  padding: 2px 0;
-  line-height: 1.15;
-}
-.person .flag { width: 7px; height: 22px; border-radius: 999px; flex: 0 0 auto; }
-.person.yes .flag { background: #00e05a; }   /* kräftig grün */
-.person.no  .flag { background: #ff1744; }   /* kräftig rot  */
-
-.person .name {
-  color: #ffffff;
-  font-weight: 900;
-  font-size: clamp(17px, 1.9vw, 24px); /* groß (Default < 30 Rückmeldungen) */
-  letter-spacing: .2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* Rollen-Badges neben Namen */
-.role-pill {
-  display:inline-flex; align-items:center; justify-content:center;
-  padding: 3px 8px;
-  margin-left: 6px;
-  border-radius: 8px;
-  font-weight: 900;
-  font-size: clamp(12px, 1.2vw, 14px);
-  line-height: 1;
-  border: 1px solid rgba(0,0,0,.25);
-  color:#0b0c0f;
-}
-.rp-el    { background:#d0002a; color:#fff; border-color:#8e001d; }    /* EL rot */
-.rp-elmit { background:#ffd400; color:#1f1700; border-color:#b38f00; }  /* Einsatzleitung gelb */
-.rp-ats   { background:#2196f3; color:#fff; border-color:#0d47a1; }    /* ATS blau */
-.rp-c     { background:#ffffff; color:#0b0c0f; border-color:#d1d5db; }  /* C weiß */
-
-/* --- DICHTE ANSICHT ab 30 Rückmeldungen --- */
-.responses-body.dense .person .name { font-size: clamp(14px, 1.3vw, 18px); }
-.responses-body.dense .role-pill    { font-size: clamp(10px, 1.05vw, 12px); padding: 2px 6px; }
-.responses-body.dense .person .flag { height: 18px; }
-
-/* B) Funktions-Badges unten */
-.roles-bottom { flex: 0 0 auto; }
-.role-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-.role-card {
-  border-radius: 12px;
-  padding: 12px;
-  position: relative;
+  justify-content: space-between;
   overflow: hidden;
-  border: 0;
-
-  .head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
-  .title { font-weight: 1000; font-size: clamp(15px, 1.7vw, 19px); letter-spacing: .35px; text-transform: uppercase; }
-  .count { font-weight: 1000; font-size: clamp(26px, 3.2vw, 38px); line-height: 1; }
-
-  .names {
-    margin-top: 8px;
-    display: grid;
-    grid-auto-rows: min-content;
-    gap: 2px;
-    max-height: 8.5em; overflow: hidden;
-  }
-  .names .n {
-    font-weight: 800;
-    font-size: clamp(14px, 1.5vw, 18px);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
 }
 
-/* kräftige Farbwelten der Karten */
+/* A) Rückmeldungen oben – vollflächig, weiches Fade unten */
+.responses-top { position:relative; flex:1 1 auto; min-height:0; overflow:hidden; }
+.responses-top::after {
+  content:''; position:absolute; left:0; right:0; bottom:0; height:48px;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(21,23,27,0) 0%, #15171b 85%);
+}
+
+/* Liste */
+.people-list {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+  gap:10px 22px; padding-bottom:24px;
+}
+.person { display:flex; align-items:flex-start; gap:12px; padding:2px 0; line-height:1.15; }
+.person .flag { width:8px; height:22px; border-radius:999px; flex:0 0 auto; margin-top:2px; }
+.person.yes .flag { background:#00e05a; }
+.person.no  .flag { background:#ff1744; }
+.person .text { min-width:0; }
+
+/* Erste Zeile: Name + (optionale) Badges; wrap erlaubt */
+.line { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 8px; }
+.name {
+  color:#fff; font-weight:900; letter-spacing:.2px;
+  font-size:clamp(17px, 1.9vw, 24px);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* Rollen-Badges neben dem Namen (nur wenn showBadgesPerUser=true) */
+.rbadge {
+  display:inline-flex; align-items:center; justify-content:center;
+  height:20px; padding:0 8px; border-radius:9999px;
+  font-weight:900; font-size:12px; line-height:20px; letter-spacing:.2px;
+  border:1px solid rgba(0,0,0,.12);
+  box-shadow:0 1px 2px rgba(0,0,0,.25), inset 0 -6px 10px rgba(255,255,255,.15);
+  white-space:nowrap;
+}
+.rbadge.el    { background:#d0002a; color:#fff; }
+.rbadge.elmit { background:#ffd400; color:#1f1700; }
+.rbadge.ats   { background:#1976d2; color:#fff; }
+.rbadge.c     { background:#ffffff; color:#0b0c0f; }
+
+/* Freitext unter dem Namen (bei Absage) */
+.reason {
+  margin-top:2px; color:#cfd5de; opacity:.8;
+  font-size:clamp(12px, 1.2vw, 14px);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* DICHTE ANSICHT ab 30 Rückmeldungen */
+.responses-body.dense .name   { font-size: clamp(14px, 1.3vw, 18px); }
+.responses-body.dense .reason { font-size: clamp(11px, 1.05vw, 13px); }
+.responses-body.dense .person .flag { height:18px; }
+.responses-body.dense .rbadge { height:18px; line-height:18px; font-size:11px; }
+
+/* B) Funktions-Karten unten */
+.roles-bottom { flex:0 0 auto; }
+.role-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.role-card {
+  border-radius:12px; padding:12px; position:relative; overflow:hidden; border:0;
+  .head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .title{ font-weight:1000; font-size:clamp(15px,1.7vw,19px); letter-spacing:.35px; text-transform:uppercase; }
+  .count{ font-weight:1000; font-size:clamp(26px,3.2vw,38px); line-height:1; }
+  .names{ margin-top:8px; display:grid; gap:2px; max-height:8.5em; overflow:hidden; }
+  .names .n{ font-weight:800; font-size:clamp(14px,1.5vw,18px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+}
 .role-card.el      { background:#d0002a; color:#fff; box-shadow: inset 0 -40px 80px rgba(0,0,0,.12); }
 .role-card.elmit   { background:#ffd400; color:#1f1700; box-shadow: inset 0 -40px 80px rgba(0,0,0,.10); }
 .role-card.ats     { background:#00c853; color:#001a0a; box-shadow: inset 0 -40px 80px rgba(0,0,0,.10); }
 .role-card.cdriver { background:#ffffff; color:#0b0c0f; box-shadow: inset 0 -40px 80px rgba(0,0,0,.08); }
 
-/* --- Karte rechts (unverändert) --- */
+/* Karte rechts */
 .map-body { padding:0; background:#fff; }
 .map-container { width:100%; height:100%; min-height:0; }
 
-/* Responsive Tweaks */
-@media (max-width: 1100px) {
-  .screen-grid { grid-template-columns: 1fr; }
-  .col-left { grid-template-rows: auto auto; }
-}
-@media (max-width: 900px) {
-  .role-grid   { grid-template-columns: repeat(2, 1fr); }
-  // .responses-top { max-height: 38vh; }
-}
-@media (max-width: 600px) {
-  .role-grid   { grid-template-columns: 1fr; }
-  // .responses-top { max-height: 42vh; }
-}
+/* Responsive */
+@media (max-width:1100px){ .screen-grid{ grid-template-columns:1fr; } .col-left{ grid-template-rows:auto auto; } }
+@media (max-width:900px){ .role-grid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width:600px){ .role-grid{ grid-template-columns:1fr; } }

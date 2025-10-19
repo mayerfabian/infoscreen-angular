@@ -1,0 +1,57 @@
+<!-- Nur Inhalt; keine Statusleiste -->
+<div class="restv2-content">
+  @if (offeneEinsaetze().length === 0) {
+    <div class="restv2-empty">
+      Keine offenen Einsätze.
+    </div>
+  } @else {
+    <div class="restv2-grid">
+      @for (e of offeneEinsaetze(); track trackByEinsatznummer($index, e)) {
+        <article class="restv2-card panel" aria-label="Offener Einsatz">
+          <header class="restv2-card__header">
+            <div class="restv2-card__title">
+              <span class="restv2-card__einsatznr">{{ e.einsatznummer }}</span>
+              <span class="restv2-card__alarmstufe">{{ e.alarmstufe }}</span>
+            </div>
+            <div class="restv2-card__subtitle">
+              <span class="restv2-card__ort">
+                @if (e.ort) { {{ e.ort }} } @else { – }
+              </span>
+              <span class="restv2-card__time">
+                {{ e.einsatzdatum_iso | date:'dd.MM.yyyy, HH:mm' }}
+              </span>
+            </div>
+          </header>
+
+          <div class="restv2-card__body">
+            <div class="restv2-card__grund">
+              {{ e.grund }}
+            </div>
+
+            <!-- NEU: Wrapper mit Fades (fix), innere Liste scrollt -->
+            <div class="restv2-logwrap">
+              <div class="restv2-loglist">
+                @for (entry of entriesForDisplay(e); track entry.id) {
+                  <div class="restv2-logitem">
+                    <div class="restv2-logitem__head">
+                      <span class="restv2-chip">{{ entry.meldungskategorie }}</span>
+                      <span class="restv2-time">{{ entry.datetime_iso | date:'dd.MM.yyyy, HH:mm:ss' }}</span>
+                    </div>
+                    <div class="restv2-logitem__text">
+                      @if (entry.fzg) { <span class="restv2-fzg">[{{ entry.fzg }}]</span> }
+                      <span class="restv2-text">{{ entry.text }}</span>
+                      @if (entry.verfasst_von?.anzeige_name) {
+                        <span class="restv2-author">– {{ entry.verfasst_von.anzeige_name }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+            <!-- /Wrapper -->
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>

@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule, NgIf, NgFor, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { Einsatz } from '../../mode.service';
+import { Einsatz } from '../../models/lea.interfaces';
 import { environment } from '../../../environments/environments';
 import * as L from 'leaflet';
 
@@ -14,12 +14,15 @@ type RouteStatus = 'idle' | 'loading' | 'ok' | 'fail';
 @Component({
   selector: 'app-alarm-v2',
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor, DatePipe],
+  imports: [CommonModule, NgIf, NgFor],
   templateUrl: './alarm-v2.component.html',
   styleUrls: ['./alarm-v2.component.scss']
 })
 export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   @Input() einsatz: Einsatz | null = null;
+
+  /** Optional: aktuelle Zeit (für Elapsed/Timer-Anzeigen) */
+  @Input() now: Date = new Date();
 
   @ViewChild('panelBody') panelBodyRef?: ElementRef<HTMLDivElement>;
   private resizeObs?: ResizeObserver;
@@ -65,7 +68,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   // Anzeige-Wechsel SV <-> Karte
   showStreetView = false;               // Start: Karte
   private ALT_MAP_MS = 15 * 1000;       // 15 s Karte
-  private ALT_SV_MS  = 7 * 1000;        // 7 s StreetView
+  private ALT_SV_MS  = 5 * 1000;        // 7 s StreetView
   private altTimer?: any;
 
   // Distanz-Schwelle

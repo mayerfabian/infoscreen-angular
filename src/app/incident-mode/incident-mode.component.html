@@ -7,37 +7,25 @@
     </div>
 
     <!-- Mitte: Titel + Adresse/Bemerkung -->
-    <div class="text-center flex-grow-1" *ngIf="einsatz as e">
-      <div class="meldebild-title text-white fw-bold">{{ meldebild(e) }}</div>
+    @if (einsatz; as e) {
+      <div class="text-center flex-grow-1">
+        <div class="meldebild-title text-white fw-bold">{{ meldebild(e) }}</div>
 
-      <div class="meldebild-sub text-white-50">
-        <ng-container *ngIf="e.location as loc; else infoTpl">
-          {{ loc.street }} <span *ngIf="loc.housenumber">{{ loc.housenumber }}</span>,
-          {{ loc.zipcode }} {{ loc.city }}
-        </ng-container>
-        <ng-template #infoTpl>
-          <span *ngIf="e.additionalinformation">{{ e.additionalinformation }}</span>
-        </ng-template>
+        <div class="meldebild-sub text-white-50">
+          @if (e.location; as loc) {
+            {{ loc.street }}
+            @if (loc.housenumber) { <span>{{ loc.housenumber }}</span> }
+            , {{ loc.zipcode }} {{ loc.city }}
+          } @else {
+            @if (e.additionalinformation) { <span>{{ e.additionalinformation }}</span> }
+          }
+        </div>
       </div>
-    </div>
+    }
 
     <!-- Rechts: FF-Logo -->
     <div class="ms-auto d-flex align-items-center">
-            <div class="btn-group">
-        <button
-          type="button"
-          class="btn btn-sm"
-          [ngClass]="isActive('v1') ? 'btn-light' : 'btn-outline-light'"
-          (click)="go('v1')"
-        >Alarm 1</button>
-
-        <button
-          type="button"
-          class="btn btn-sm"
-          [ngClass]="isActive('v2') ? 'btn-light' : 'btn-outline-light'"
-          (click)="go('v2')"
-        >Alarm 2</button>
-      </div>
+      <app-header-controls></app-header-controls>
       <img src="assets/logo_ohne_text.png" alt="Feuerwehr-Logo" class="logo-img" />
     </div>
   </div>
@@ -46,11 +34,18 @@
 <!-- Gelb/Schwarz Ticker -->
 <div class="ticker flash"></div>
 
-<!-- Body: V1 oder V2 wird hier dynamisch eingeblendet, 'einsatz' als Input -->
+<!-- Body: V1 oder V2 wird hier dynamisch eingeblendet -->
 <div class="screen-content">
-  <ng-container *ngComponentOutlet="activeCmp; inputs: outletInputs"></ng-container>
+  @switch (viewVariant()) {
+    @case ('v1') {
+      <app-alarm-v1 [einsatz]="einsatz" [now]="now"></app-alarm-v1>
+    }
+    @case ('v2') {
+      <app-alarm-v2 [einsatz]="einsatz" [now]="now"></app-alarm-v2>
+    }
+  }
 
-  <!-- (optional) Dummy-Use gegen AoT-Warnungen -->
+  <!-- (optional) AoT helper -->
   <ng-template>
     <app-alarm-v1></app-alarm-v1>
     <app-alarm-v2></app-alarm-v2>

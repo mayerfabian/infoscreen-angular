@@ -1,0 +1,71 @@
+<!-- Nur anzeigen, wenn ?dev=1 -->
+<ng-container *ngIf="show">
+  <div class="hc" role="region" aria-label="Dev-Dashboard">
+    <div class="hc__drag" (mousedown)="onDragStart($event)" title="Dev-Dashboard verschieben">
+      Dev-Dashboard
+    </div>
+
+    <!-- Alarmscreen -->
+    <div class="hc__col">
+      <div class="hc__heading">Alarmscreen</div>
+      <button
+        class="hc__btn"
+        [class.is-active]="incidentActive === 'v1'"
+        [attr.aria-pressed]="incidentActive === 'v1'"
+        (click)="setIncident('v1')">
+        Alarm&nbsp;1
+      </button>
+      <button
+        class="hc__btn"
+        [class.is-active]="incidentActive === 'v2'"
+        [attr.aria-pressed]="incidentActive === 'v2'"
+        (click)="setIncident('v2')">
+        Alarm&nbsp;2
+      </button>
+    </div>
+
+    <!-- Ruhemodus -->
+    <div class="hc__col">
+      <div class="hc__heading">Ruhemodus</div>
+      <button
+        class="hc__btn"
+        [class.is-active]="restActive === 'v1'"
+        [attr.aria-pressed]="restActive === 'v1'"
+        (click)="setRest('v1')">
+        Ruhe&nbsp;1
+      </button>
+      <button
+        class="hc__btn"
+        [class.is-active]="restActive === 'v2'"
+        [attr.aria-pressed]="restActive === 'v2'"
+        (click)="setRest('v2')">
+        Ruhe&nbsp;2
+      </button>
+    </div>
+
+    <!-- Test (zweifache Höhe) -->
+    <div class="hc__col hc__col--test">
+      <div class="hc__heading">Test</div>
+      <button
+        class="hc__btn hc__btn--test"
+        [class.is-active]="testActive"
+        [attr.aria-pressed]="testActive"
+        (click)="toggleTest()">
+        TEST
+      </button>
+    </div>
+
+    <!-- Anzahl Rückmeldungen (rechts daneben) -->
+    <div class="hc__col hc__col--input">
+      <div class="hc__heading">Anzahl&nbsp;Rückmeldungen</div>
+      <input
+        id="hc-user"
+        class="hc__input"
+        type="text"
+        placeholder="z. B. 15"
+        [(ngModel)]="userValue"
+        (keydown.enter)="submitUser()"
+      />
+    </div>
+  </div>
+</ng-container>

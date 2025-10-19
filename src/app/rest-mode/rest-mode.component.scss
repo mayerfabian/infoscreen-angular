@@ -1,124 +1,52 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  height: 100%; /* NEU: nimmt gesamte Bodyhöhe */
-  background: #0b0c0f;
-  color: #fff;
+  /* Zwei Zeilen: Header (auto) + Content (1fr) */
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100svh; /* stabile Viewporthöhe (auch Mobile) */
+  background: #0b0d10;
+  color: #e9ecef;
 }
 
-/* ----- Header / Navbar ----- */
-.navbar.bg-dark {
-  background: linear-gradient(180deg, #1e1f22, #141516) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+/* Header-Feinschliff */
+header.navbar {
+  /* Verlauf: oben fast schwarz-blau → unten dunkelblau */
+  background: linear-gradient(
+    to top,
+    #0a0f1e 0%,
+    #05122b 55%,
+    #01163c 100%
+  ) !important;
+  border-color: rgba(255,255,255,0.08) !important;
 }
 
-/* Logos in FARBE */
+/* Logos exakt wie im Incident-Mode */
 .logo-img {
   height: 85px;
   width: auto;
   object-fit: contain;
-}
-
-/* Hauptinhalt füllt alles unterhalb des Headers */
-.screen-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 12px;
-  overflow: hidden;
-}
-
-/* Zweispaltiges Vollhöhen-Layout */
-.screen-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  height: 100%; /* wichtig */
-}
-
-/* Linke Spalte: 2 Reihen (50/50) */
-.col-left {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 12px;
-  min-height: 0;
-}
-
-/* Rechte Spalte: eine Zeile */
-.col-right {
-  min-height: 0;
-  display: grid;
-  grid-template-rows: 1fr;
-}
-
-/* Panels */
-.panel {
-  display: flex;
-  flex-direction: column;
-  background: #15171b;
-  border: 1px solid #1f2229;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  overflow: hidden;
-  min-height: 0;
-
-  .panel-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-bottom: 1px solid #1f2229;
-
-    h2 {
-      margin: 0;
-      font-size: clamp(16px, 2vw, 18px);
-      font-weight: 700;
-      letter-spacing: .2px;
-      color: #e7eaf0;
-    }
-  }
-
-
-  iframe {
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: #0e0f12;
-  }
-}
-.uwz-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  background-color: #0e0f12; // optional dunkler Hintergrund
-  background: #15171b;
-  overflow: hidden;
-}
-
-.uwz-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; // skaliert und zentriert
   display: block;
 }
 
-/* Responsiv: kleinere Logos */
-@media (max-width: 576px) {
-  .logo-img { height: 38px; }
+/* Content-Zeile füllt 1fr – KEIN äußeres Scrollen */
+.screen-content {
+  min-height: 0;   /* wichtig: erlaubt Kindern echtes Strecken */
+  overflow: hidden;/* kein globales Scrollen, nur in inneren Containern */
+  padding: 1.25rem;
 }
 
-/* Einspaltig unter 1100px */
-@media (max-width: 1100px) {
-  .screen-grid {
-    grid-template-columns: 1fr;
-  }
-  .col-left {
-    grid-template-rows: auto auto;
-  }
+/* Typo/Optik */
+.fw-bold { font-weight: 700; }
+.fs-2 { font-size: clamp(1.25rem, 2.2vw, 2rem); }
+.fs-4 { font-size: clamp(1rem, 1.6vw, 1.25rem); }
+
+.panel {
+  background: linear-gradient(360deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.04);
 }
+.badge { border: 1px solid rgba(255,255,255,0.15); }
+.text-white { color: #fff !important; }
+.text-secondary { color: rgba(255,255,255,0.65) !important; }
