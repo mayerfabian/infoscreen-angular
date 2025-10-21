@@ -3,12 +3,12 @@
 /* Inhalt = volle Bildschirmhöhe; keine globale Scrollbar */
 .restv2-content { height:100%; min-height:0; overflow:hidden; padding:12px; }
 
-/* Gleich hohe Panels pro Zeile; max. Höhe = Content-Höhe */
+/* Gleich hohe Panels pro Zeile */
 .restv2-grid {
   display:flex; flex-wrap:wrap; gap:16px; align-items:stretch; height:100%;
 }
 
-/* Panel im v1-Look; Höhe an Content gekoppelt */
+/* Panel */
 .restv2-card {
   flex:1 1 360px;
   display:flex; flex-direction:column;
@@ -19,54 +19,42 @@
   box-shadow:0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
   color:#e9ecef;
 }
-
 .restv2-card__header{
   padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.08);
   background:rgba(0,0,0,0.15); backdrop-filter:blur(4px);
   border-top-left-radius:inherit; border-top-right-radius:inherit;
 }
-
 .restv2-card__title{ display:flex; align-items:baseline; gap:10px; margin-bottom:2px; }
 .restv2-card__einsatznr{ font-weight:700; font-size:16px; color:#fff; }
 .restv2-card__alarmstufe{ font-weight:600; font-size:14px; color:#cfd6e4; }
-
 .restv2-card__subtitle{
   display:flex; align-items:center; justify-content:space-between; gap:12px;
   font-size:13px; color:rgba(255,255,255,0.75);
 }
 
-/* Body füllt Rest; innen eigener Scrollbereich */
+/* Body füllt Rest */
 .restv2-card__body{
   display:flex; flex-direction:column; gap:10px;
   padding:12px 14px 14px 14px; min-height:0; flex:1 1 auto; overflow:hidden;
 }
-
 .restv2-card__grund{ font-size:14px; color:#e9ecef; }
 
-/* Fixierte Fades im Wrapper; Liste darunter scrollt */
-.restv2-logwrap{
-  position:relative; height:100%; min-height:0; overflow:hidden;
+/* Spalten-Layout für Logeinträge (statt Scrollen) */
+.restv2-logcols{
+  height:100%; min-height:0;
+  column-count: 2;
+  column-gap: 12px;
+  column-fill: auto;
+  overflow: hidden;
 }
-.restv2-logwrap::before,
-.restv2-logwrap::after{
-  content:""; position:absolute; left:0; right:0; height:24px; pointer-events:none;
-  opacity:0; transition:opacity 160ms linear;
+.restv2-logitem--column{
+  display: inline-block;
+  width: 100%;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  -moz-column-break-inside: avoid;
+  margin-bottom: 8px;
 }
-.restv2-logwrap::before{ top:0; background:linear-gradient(to bottom, rgba(11,13,16,1), rgba(11,13,16,0)); }
-.restv2-logwrap::after{ bottom:0; background:linear-gradient(to top, rgba(11,13,16,1), rgba(11,13,16,0)); }
-/* Sichtbarkeit nur wenn nicht am Rand */
-.restv2-logwrap:not(.at-top)::before{ opacity:1; }
-.restv2-logwrap:not(.at-bottom)::after{ opacity:1; }
-
-/* Die eigentliche scrollende Liste */
-.restv2-loglist{
-  position:relative; height:100%; min-height:0;
-  overflow:auto; display:flex; flex-direction:column; gap:8px;
-  scrollbar-width:none; -ms-overflow-style:none;
-  scroll-behavior: auto; /* wichtig: kein Smooth-Stacking */
-}
-.restv2-loglist::-webkit-scrollbar{ display:none; }
-
 .restv2-logitem{
   background:rgba(255,255,255,0.03);
   border:1px solid rgba(255,255,255,0.08);
@@ -82,3 +70,90 @@
 .restv2-author{ margin-left:6px; color:rgba(255,255,255,0.7); }
 
 .restv2-empty{ height:100%; display:grid; place-items:center; font-size:16px; color:rgba(255,255,255,0.75); }
+
+/* --- Carousel --- */
+.restv2-carousel{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  border-radius:16px;
+}
+.restv2-track{
+  display:flex;
+  height:100%;
+  transition: transform 600ms ease;
+  will-change: transform;
+}
+.restv2-page{
+  flex: 0 0 100%;
+  height: 100%;
+  padding: 0;
+  display:flex; gap:16px;
+  align-items:stretch;
+}
+.restv2-page > .restv2-card{ flex: 1 1 0; }
+
+/* RESPONSIV: unter 1200px lieber 1 Spalte innerhalb der Karte */
+@media (max-width: 1199.98px) {
+  .restv2-logcols { column-count: 1; }
+}
+
+/* ===== Unterer Bereich: Kacheln (statt Tabelle/Badges) ===== */
+.restv2-card__footer{
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.12);
+  padding: 10px 12px;
+}
+
+/* Zeile: space-between + Wrap */
+.zib-tile-row{
+  min-height: 2.5rem;
+}
+
+/* Kacheln: quadratisch mit kleinem Radius */
+.zib-tile{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  align-items:flex-start;
+  gap:4px;
+  min-width: 120px;
+  max-width: 180px;
+  padding:10px 12px;
+  border-radius:6px;            /* kleiner Radius => eher quadratisch */
+  color:#fff;
+  user-select:none;
+}
+
+/* Name oben */
+.zib-tile__name{
+  font-weight:700;
+  line-height:1.1;
+  font-size:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Werte unten, untereinander */
+.zib-tile__meta{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  font-size:13px;
+  line-height:1.2;
+  opacity:0.95;
+}
+.zib-tile__line{ white-space:nowrap; }
+.zib-val{ font-weight:600; }
+
+/* Farben: knalliges Grün bei vollständig, sonst kräftiges Rot */
+.tile-ok{
+  background:#00c853;           /* vivid green */
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+.tile-bad{
+  background:#e53935;           /* strong red */
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}

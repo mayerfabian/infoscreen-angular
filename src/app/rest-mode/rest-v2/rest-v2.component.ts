@@ -1,30 +1,76 @@
 import {
-  Component, OnInit, OnDestroy, ChangeDetectionStrategy,
-  signal, computed, effect, Input,
+  Component,
+  OnInit,
+  OnDestroy,
+  ChangeDetectionStrategy,
+  signal,
+  computed,
+  effect,
+  Input,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-  import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 type IsoDatetime = string;
 
-export interface VerfasstVon { standesbuchnummer: number; vorname: string; zuname: string; anzeige_name: string; }
+export interface VerfasstVon {
+  standesbuchnummer: number;
+  vorname: string;
+  zuname: string;
+  anzeige_name: string;
+}
 export interface TagebuchEintrag {
-  id: number; fzg: string | null; text: string; meldungskategorie: string;
-  uhrzeit_de: string; datetime_iso: IsoDatetime; verfasst_von: VerfasstVon;
+  id: number;
+  fzg: string | null;
+  text: string;
+  meldungskategorie: string;
+  uhrzeit_de: string;
+  datetime_iso: IsoDatetime;
+  verfasst_von: VerfasstVon;
 }
+
+/** Fahrzeuge laut API */
+export interface Fahrzeug {
+  einsatznummer: string;
+  rufname: string;         // z.B. "Pumpe 1"
+  funkrufname: string;     // z.B. "LFA-B"
+  status: number;
+  besatzung: string | null; // Achtung: string in API
+  km: number | null;        // Zahl (kann null sein)
+  timestamp_iso: IsoDatetime;
+  aus_iso: IsoDatetime | null;
+  ein_iso: IsoDatetime | null;
+  verantwortlich: VerfasstVon;
+}
+
 export interface EinsatzGruppe {
-  einsatznummer: string; alarmstufe: string; ort: string | null; grund: string;
-  einsatzdatum_iso: IsoDatetime; tagebuch: TagebuchEintrag[];
+  einsatznummer: string;
+  alarmstufe: string;
+  ort: string | null;
+  grund: string;
+  einsatzdatum_iso: IsoDatetime;
+  tagebuch: TagebuchEintrag[];
+  fahrzeuge?: Fahrzeug[];
 }
-export interface EinsatzOffenObject { [einsatznummer: string]: EinsatzGruppe; }
+export interface EinsatzOffenObject {
+  [einsatznummer: string]: EinsatzGruppe;
+}
 export interface ApiData {
   einsatz_offen: EinsatzOffenObject;
   einsatzhistory: Array<{
-    einsatztag: string; einsatzdatum_iso: IsoDatetime;
-    einsatzstatus: 'offen'|'beendet'; einsatzalarmstufe: string; einsatzort: string | null; einsatzgrund: string;
+    einsatztag: string;
+    einsatzdatum_iso: IsoDatetime;
+    einsatzstatus: 'offen' | 'beendet';
+    einsatzalarmstufe: string;
+    einsatzort: string | null;
+    einsatzgrund: string;
   }>;
 }
-export interface ApiResponse { ok: boolean; meta:{ generated_at: IsoDatetime; version: string; }; data: ApiData; }
+export interface ApiResponse {
+  ok: boolean;
+  meta: { generated_at: IsoDatetime; version: string };
+  data: ApiData;
+}
 
 @Component({
   selector: 'app-rest-v2',
@@ -40,8 +86,9 @@ export class RestV2Component implements OnInit, OnDestroy {
   @Input() apiUrl?: string;
 
   private readonly DEFAULT_API_URL = 'https://info.ff-wuerflach.at/api/einsatz.php';
-  private readonly FAST_MS = 10_000;      // 10 s bei offenen Einsätzen
+  private readonly FAST_MS = 10_000; // 10 s bei offenen Einsätzen
   private readonly SLOW_MS = 10 * 60_000; // 10 min wenn leer
+  private readonly CAROUSEL_INTERVAL = 20_000; // 20 s
 
   private loadingSig = signal<boolean>(false);
   private errorSig = signal<string | null>(null);
@@ -61,166 +108,179 @@ export class RestV2Component implements OnInit, OnDestroy {
     });
   });
 
+  /** Seiten für das Carousel: 2 Karten pro Seite */
+  readonly pages = computed<EinsatzGruppe[][]>(() => {
+    const src = this.offeneEinsaetze();
+    const res: EinsatzGruppe[][] = [];
+    for (let i = 0; i < src.length; i += 2) {
+      res.push(src.slice(i, i + 2));
+    }
+    return res;
+  });
+
+  /** aktueller Carousel-Index */
+  readonly pageIndex = signal<number>(0);
+
   private nextPollHandle: any;
+  private carouselHandle: any;
 
-  /** pro Element: { interval, timeout, token } */
-  private scrollers = new Map<HTMLElement, { interval?: number; timeout?: number; token: number }>();
-  private tokenCounter = 1;
+  constructor(private http: HttpClient) {
+    // „keep-alive“-Effect
+    effect(() => void this.errorSig());
 
-  constructor(private http: HttpClient) { effect(() => void this.errorSig()); }
+    // Wenn sich die Seitenzahl ändert, Index validieren und Carousel (de)aktivieren
+    effect(() => {
+      const p = this.pages();
+      const len = p.length;
+      // Index einfangen
+      if (this.pageIndex() >= len && len > 0) {
+        this.pageIndex.set(0);
+      }
+      // Carousel-Start/Stopp-Regel
+      if (this.offeneEinsaetze().length > 2 && len > 1) {
+        this.startCarousel();
+      } else {
+        this.stopCarousel();
+      }
+    });
+  }
 
-  ngOnInit(): void { this.fetch(); }
-  ngOnDestroy(): void { this.clearNextPoll(); this.stopAllAutoScroll(); }
+  ngOnInit(): void {
+    this.fetch();
+  }
 
-  trackByEinsatznummer(_i:number, item:EinsatzGruppe){ return item.einsatznummer; }
+  ngOnDestroy(): void {
+    this.clearNextPoll();
+    this.stopCarousel();
+  }
+
+  trackByEinsatznummer(_i: number, item: EinsatzGruppe) {
+    return item.einsatznummer;
+  }
 
   /** Einträge: zzImage ausblenden, neueste zuerst */
-  entriesForDisplay(e: EinsatzGruppe){
+  entriesForDisplay(e: EinsatzGruppe) {
     const arr = e?.tagebuch ?? [];
     return [...arr]
-      .filter(en => (en.meldungskategorie || '').toLowerCase() !== 'zzimage')
-      .sort((a,b) => new Date(b.datetime_iso||0).getTime() - new Date(a.datetime_iso||0).getTime());
+      .filter((en) => (en.meldungskategorie || '').toLowerCase() !== 'zzimage')
+      .sort(
+        (a, b) =>
+          new Date(b.datetime_iso || 0).getTime() -
+          new Date(a.datetime_iso || 0).getTime()
+      );
   }
 
-  // --- polling ---
-  private currentApiUrl(){ return this.apiUrl?.trim() || this.DEFAULT_API_URL; }
-  private clearNextPoll(){ if (this.nextPollHandle) { clearTimeout(this.nextPollHandle); this.nextPollHandle = undefined; } }
-  private scheduleNextPoll(){
+  // --- Polling ---
+  private currentApiUrl() {
+    return this.apiUrl?.trim() || this.DEFAULT_API_URL;
+  }
+
+  private clearNextPoll() {
+    if (this.nextPollHandle) {
+      clearTimeout(this.nextPollHandle);
+      this.nextPollHandle = undefined;
+    }
+  }
+
+  private scheduleNextPoll() {
     this.clearNextPoll();
-    const delay = this.offeneEinsaetze().length > 0 ? this.FAST_MS : this.SLOW_MS;
+    const delay =
+      this.offeneEinsaetze().length > 0 ? this.FAST_MS : this.SLOW_MS;
     this.nextPollHandle = setTimeout(() => this.fetch(), delay);
   }
-  private fetch(){
+
+  private fetch() {
     if (this.loadingSig()) return;
+
     this.loadingSig.set(true);
-    this.http.get<ApiResponse>(this.currentApiUrl(), { responseType: 'json' as const })
+    this.http
+      .get<ApiResponse>(this.currentApiUrl(), { responseType: 'json' as const })
       .subscribe({
-        next: resp => {
+        next: (resp) => {
           if (!resp || resp.ok !== true || !resp.data) {
             this.errorSig.set('Ungültige API-Antwort.');
             this.payloadSig.set(null);
           } else {
             this.payloadSig.set(resp);
             this.errorSig.set(null);
-            // nach Render Auto-Scroll prüfen
-            setTimeout(() => this.ensureAutoScroll(), 0);
           }
           this.loadingSig.set(false);
           this.scheduleNextPoll();
         },
-        error: err => {
-          this.errorSig.set(`Fehler beim Laden: ${err?.message || 'unbekannt'}`);
+        error: (err) => {
+          this.errorSig.set(
+            `Fehler beim Laden: ${err?.message || 'unbekannt'}`
+          );
           this.payloadSig.set(null);
           this.loadingSig.set(false);
           this.clearNextPoll();
           this.nextPollHandle = setTimeout(() => this.fetch(), this.SLOW_MS);
-        }
+        },
       });
   }
 
-  // --- fades + autoscroll ---
-  /** Aktualisiert at-top/at-bottom auf der *Wrapper*-Box (Fades sind dort) */
-  private updateFades(listEl: HTMLElement){
-    const wrap = listEl.parentElement as HTMLElement | null;
-    if (!wrap) return;
-    const max = Math.max(0, listEl.scrollHeight - listEl.clientHeight);
-    const top = listEl.scrollTop;
-    const atTop = top <= 1;
-    const atBottom = top >= max - 1;
-    wrap.classList.toggle('at-top', atTop);
-    wrap.classList.toggle('at-bottom', atBottom);
+  // --- Carousel ---
+  private startCarousel() {
+    this.stopCarousel();
+    this.carouselHandle = setInterval(() => {
+      const len = this.pages().length;
+      if (len <= 1) return;
+      const next = (this.pageIndex() + 1) % len;
+      this.pageIndex.set(next);
+    }, this.CAROUSEL_INTERVAL);
   }
-
-  /** Stoppt Intervalle *und* Timeouts aller bekannten Scroller */
-  private stopAllAutoScroll(){
-    for (const [el, h] of this.scrollers.entries()) {
-      if (h.interval) clearInterval(h.interval);
-      if (h.timeout) clearTimeout(h.timeout);
-      this.scrollers.delete(el);
+  private stopCarousel() {
+    if (this.carouselHandle) {
+      clearInterval(this.carouselHandle);
+      this.carouselHandle = undefined;
     }
   }
 
-  /** Startet den pendelnden Auto-Scroll auf einem Element und sorgt dafür, dass es niemals doppelt läuft. */
-  private startAutoScroll(list: HTMLElement){
-    // vorhandene Timer anhalten
-    const old = this.scrollers.get(list);
-    if (old?.interval) clearInterval(old.interval);
-    if (old?.timeout) clearTimeout(old.timeout);
+  /* ===================== Badge-/Kachel-Logik ===================== */
 
-    // eindeutiger Token für diese Session
-    const token = ++this.tokenCounter;
-    list.dataset['autoscrollId'] = String(token);
-
-    // erstes Fade-Update
-    this.updateFades(list);
-
-    // wenn kein Overflow → nichts zu scrollen
-    if (list.scrollHeight <= list.clientHeight + 2) {
-      this.scrollers.set(list, { token });
-      return;
-    }
-
-    // sichere Scroll-Einstellungen
-    (list.style as any).scrollBehavior = 'auto';
-
-    const stepPx = 1;
-    const tickMs = 60;
-    const pauseMs = 1200;
-
-    const tick = (dir: 1 | -1) => {
-      // Abbruch, wenn zwischenzeitlich ein neuer Token vergeben wurde
-      if (list.dataset['autoscrollId'] !== String(token)) return;
-
-      const max = list.scrollHeight - list.clientHeight;
-      const next = list.scrollTop + (dir * stepPx);
-
-      if (dir === 1 && next >= max) {
-        list.scrollTop = max;
-        this.updateFades(list);
-        // Pause, danach Richtung wechseln – Timeout tracken & token-check
-        const to = window.setTimeout(() => {
-          if (list.dataset['autoscrollId'] !== String(token)) return;
-          const h = this.scrollers.get(list);
-          if (h?.interval) clearInterval(h.interval);
-          const interval = window.setInterval(() => tick(-1), tickMs);
-          this.scrollers.set(list, { interval, token });
-        }, pauseMs);
-        this.scrollers.set(list, { timeout: to, token });
-        return;
-      }
-
-      if (dir === -1 && next <= 0) {
-        list.scrollTop = 0;
-        this.updateFades(list);
-        const to = window.setTimeout(() => {
-          if (list.dataset['autoscrollId'] !== String(token)) return;
-          const h = this.scrollers.get(list);
-          if (h?.interval) clearInterval(h.interval);
-          const interval = window.setInterval(() => tick(1), tickMs);
-          this.scrollers.set(list, { interval, token });
-        }, pauseMs);
-        this.scrollers.set(list, { timeout: to, token });
-        return;
-      }
-
-      list.scrollTop = Math.max(0, Math.min(max, next));
-      this.updateFades(list);
-    };
-
-    // initial nach unten
-    const interval = window.setInterval(() => tick(1), tickMs);
-    this.scrollers.set(list, { interval, token });
+  /** Wert vorhanden? (nicht leer, nicht '0', nicht '-', nicht 0, nicht NaN) */
+  private _isPresent(v: any): boolean {
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'number') return Number.isFinite(v) && v > 0;
+    const s = String(v).trim();
+    if (!s) return false;
+    if (s === '-' || s === '0') return false;
+    // "00" etc. -> 0
+    const n = Number(s);
+    if (!Number.isNaN(n) && n <= 0) return false;
+    return true;
   }
 
-  /** Sucht alle Listen und startet genau einen Scroller je Liste; alte Timer werden sauber beendet. */
-  private ensureAutoScroll(){
-    // zuerst alle alten Timer stoppen (auch gegen Re-Render)
-    this.stopAllAutoScroll();
+  /** km fehlt? */
+  private _kmMissing(f: Fahrzeug): boolean {
+    return !this._isPresent(f?.km);
+  }
+  /** Mann/Besatzung fehlt? (API liefert string) */
+  private _mannMissing(f: Fahrzeug): boolean {
+    return !this._isPresent(f?.besatzung);
+  }
 
-    // alle aktuellen Listen aufnehmen
-    const lists = Array.from(document.querySelectorAll<HTMLElement>('.restv2-loglist'));
-    for (const list of lists) {
-      this.startAutoScroll(list);
-    }
+  /** True, wenn km und Mann beide gesetzt */
+  isCompleteFzg(f: Fahrzeug): boolean {
+    return !this._kmMissing(f) && !this._mannMissing(f);
+  }
+
+  /** CSS-Klasse der Kachel (knalliges Grün/Rot) */
+  tileClassFzg(f: Fahrzeug): string {
+    return this.isCompleteFzg(f) ? 'tile-ok' : 'tile-bad';
+  }
+
+  /** Anzeige-Helper */
+  displayName(f: Fahrzeug): string {
+    return f?.funkrufname || f?.rufname || '';
+  }
+  displayKm(f: Fahrzeug): string {
+    return this._isPresent(f?.km) ? String(f.km) : '?';
+  }
+  displayMann(f: Fahrzeug): string {
+    return this._isPresent(f?.besatzung) ? String(f.besatzung) : '?';
+  }
+  tileTitle(f: Fahrzeug): string {
+    return `${this.displayName(f)} • km: ${this.displayKm(f)} • Mann: ${this.displayMann(f)}`;
   }
 }

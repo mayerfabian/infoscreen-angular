@@ -77,23 +77,20 @@
 
 /* UWZ – KEIN Hintergrund, Bild contained */
 .uwz-wrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
+
 .uwz-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* ganze Karte sichtbar */
   display: block;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
 }
 
 /* ====== Unsichtbarer Scroll im Inneren + Fade (Top/Bottom) ====== */
