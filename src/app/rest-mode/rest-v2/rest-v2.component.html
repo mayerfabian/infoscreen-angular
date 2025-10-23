@@ -1,8 +1,32 @@
 <div class="restv2-content">
   @if (offeneEinsaetze().length === 0) {
-    <div class="restv2-empty">Keine offenen Einsätze.</div>
+    <div class="restv2-history">
+      <div class="history-scroll">
+        <div class="history-list">
+          @for (h of history(); track h.einsatzdatum_iso) {
+            <div class="history-row">
+              <div class="hbadge" [ngClass]="
+                (h.einsatzalarmstufe || '').toUpperCase().startsWith('B') ? 'hbadge-b' :
+                (h.einsatzalarmstufe || '').toUpperCase().startsWith('T') ? 'hbadge-t' :
+                (h.einsatzalarmstufe || '').toUpperCase().startsWith('S') ? 'hbadge-s' : 'hbadge-x'
+              ">{{ (h.einsatzalarmstufe || '??').slice(0,2).toUpperCase() }}</div>
+
+                            <div class="history-left">
+                <div class="history-grund">{{ h.einsatzgrund }}</div>
+                <div class="history-ort">@if (h.einsatzort) { {{ h.einsatzort }} } @else { &mdash; }</div>
+              </div>
+              <div class="history-right">
+                <span class="history-date">{{ h.einsatzdatum_iso | date:'EEEE, dd.MM.yyyy' }}</span>
+                <span class="history-clock">{{ h.einsatzdatum_iso | date:'HH:mm:ss' }}</span>
+                <span class="history-ago">{{ agoText(h.einsatzdatum_iso) }}</span>
+              </div>
+              </div>
+          }
+        </div>
+      </div>
+    </div>
   } @else if (offeneEinsaetze().length === 1) {
-    <!-- Ein einzelner Einsatz, kein Carousel nötig -->
+    <!-- Ein einzelner Einsatz, kein Carousel nÃ¶tig -->
     <div class="restv2-single">
       @for (e of offeneEinsaetze(); track e.einsatznummer) {
         <article class="restv2-card panel" aria-label="Offener Einsatz">
@@ -40,7 +64,7 @@
                 }
               </div>
             } @else {
-              <div class="restv2-logempty">Noch keine Einträge vorhanden.</div>
+              <div class="restv2-logempty">Noch keine EintrÃ¤ge vorhanden.</div>
             }
           </div>
 
@@ -109,7 +133,7 @@
                   }
                 </div>
               } @else {
-                <div class="restv2-logempty">Noch keine Einträge vorhanden.</div>
+                <div class="restv2-logempty">Noch keine EintrÃ¤ge vorhanden.</div>
               }
             </div>
 
@@ -135,4 +159,5 @@
     </div>
   }
 </div>
+
 

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   OnInit,
   OnDestroy,
@@ -98,7 +98,7 @@ export class RestV2Component implements OnInit, OnDestroy {
   readonly loading = computed(() => this.loadingSig());
   readonly error = computed(() => this.errorSig());
 
-  /** Offene EinsÃ¤tze (neueste zuerst) */
+  /** Offene Einsätze (neueste zuerst) */
   readonly offeneEinsaetze = computed<EinsatzGruppe[]>(() => {
     const data = this.payloadSig()?.data?.einsatz_offen;
     if (!data) return [];
@@ -178,7 +178,7 @@ export class RestV2Component implements OnInit, OnDestroy {
     this.http.get<ApiResponse>(this.currentApiUrl(), { responseType: 'json' as const }).subscribe({
       next: (resp) => {
         if (!resp || resp.ok !== true || !resp.data) {
-          this.errorSig.set('UngÃ¼ltige API-Antwort.'); this.payloadSig.set(null);
+          this.errorSig.set('Ungültige API-Antwort.'); this.payloadSig.set(null);
         } else {
           this.payloadSig.set(resp); this.errorSig.set(null);
         }
@@ -255,6 +255,28 @@ export class RestV2Component implements OnInit, OnDestroy {
     if (kmMissing && crewMissing) return 'km und Besatzung fehlen';
     if (kmMissing) return 'km fehlt';
     return 'Besatzung fehlt';
+  }
+
+  // History: kurze Übersicht (neueste zuerst)
+  history() {
+    const arr = this.payloadSig()?.data?.einsatzhistory ?? [];
+    const items = [...arr].filter(h => (h?.einsatzstatus || 'beendet') === 'beendet');
+    items.sort((a, b) => new Date(b.einsatzdatum_iso).getTime() - new Date(a.einsatzdatum_iso).getTime());
+    return items;
+  }
+
+  // 'vor x Tagen/Stunden/Minuten' für History
+  agoText(iso: string): string {
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return '';
+    const diff = Date.now() - t;
+    const min = Math.floor(diff / 60000);
+    const hr = Math.floor(diff / 3600000);
+    const day = Math.floor(diff / 86400000);
+    if (day >= 1) return day === 1 ? 'vor 1 Tag' : `vor ${day} Tagen`;
+    if (hr >= 1) return hr === 1 ? 'vor 1 Stunde' : `vor ${hr} Stunden`;
+    const m = Math.max(0, min);
+    return m <= 1 ? 'vor 1 Minute' : `vor ${m} Minuten`;
   }
 }
 
