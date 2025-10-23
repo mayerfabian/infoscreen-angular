@@ -31,7 +31,7 @@ header.navbar {
 .screen-content {
   min-height: 0;   /* wichtig: erlaubt Kindern echtes Strecken */
   overflow: hidden;/* kein globales Scrollen, nur in inneren Containern */
-  padding: 1.25rem;
+  padding: 1.25rem 0px 1.25rem 0px;
 }
 
 /* Typo/Optik */

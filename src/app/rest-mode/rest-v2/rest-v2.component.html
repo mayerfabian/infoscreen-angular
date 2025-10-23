@@ -1,12 +1,9 @@
-<!-- src/app/rest-mode/rest-v2/rest-v2.component.html -->
 <div class="restv2-content">
   @if (offeneEinsaetze().length === 0) {
-    <div class="restv2-empty">
-      Keine offenen Einsätze.
-    </div>
-  } @else if (offeneEinsaetze().length <= 2) {
-    <!-- Klassisches Grid (≤ 2 Karten) -->
-    <div class="restv2-grid">
+    <div class="restv2-empty">Keine offenen Einsätze.</div>
+  } @else if (offeneEinsaetze().length === 1) {
+    <!-- Ein einzelner Einsatz, kein Carousel nötig -->
+    <div class="restv2-single">
       @for (e of offeneEinsaetze(); track e.einsatznummer) {
         <article class="restv2-card panel" aria-label="Offener Einsatz">
           <header class="restv2-card__header">
@@ -15,141 +12,127 @@
               <span class="restv2-card__alarmstufe">{{ e.alarmstufe }}</span>
             </div>
             <div class="restv2-card__subtitle">
-              <span class="restv2-card__ort">
-                @if (e.ort) { {{ e.ort }} } @else { – }
-              </span>
-              <span class="restv2-card__time">
-                {{ e.einsatzdatum_iso | date:'dd.MM.yyyy, HH:mm' }}
-              </span>
+              <span class="restv2-card__ort">@if (e.ort) { {{ e.ort }} } @else { &mdash; }</span>
+              <span class="restv2-card__time">{{ e.einsatzdatum_iso | date:'dd.MM.yyyy, HH:mm' }}</span>
             </div>
           </header>
 
           <div class="restv2-card__body">
-            <div class="restv2-card__grund">
-              {{ e.grund }}
-            </div>
+            <div class="restv2-card__grund">{{ e.grund }}</div>
 
-            <!-- Spalten-Layout der Meldungen -->
-            <div class="restv2-logcols">
-              @for (entry of entriesForDisplay(e); track entry.id) {
-                <div class="restv2-logitem restv2-logitem--column">
-                  <div class="restv2-logitem__head">
-                    <span class="restv2-chip">{{ entry.meldungskategorie }}</span>
-                    <span class="restv2-time">{{ entry.datetime_iso | date:'dd.MM.yyyy, HH:mm:ss' }}</span>
-                  </div>
-                  <div class="restv2-logitem__text">
-                    @if (entry.fzg) { <span class="restv2-fzg">[{{ entry.fzg }}]</span> }
-                    <span class="restv2-text">{{ entry.text }}</span>
-                    @if (entry.verfasst_von?.anzeige_name) {
-                      <span class="restv2-author">– {{ entry.verfasst_von.anzeige_name }}</span>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Unterer Bereich: Kacheln (Name oben, km/Mann darunter) -->
-          @if (e.fahrzeuge?.length) {
-            <footer class="restv2-card__footer">
-              <div class="zib-tile-row d-flex flex-wrap justify-content-between align-items-end gap-2">
-                @for (f of e.fahrzeuge; track f.funkrufname) {
-                  <div
-                    class="zib-tile"
-                    [ngClass]="tileClassFzg(f)"
-                    [attr.title]="tileTitle(f)"
-                    role="status"
-                    aria-live="polite">
-                    <div class="zib-tile__name">{{ displayName(f) }}</div>
-                    <div class="zib-tile__meta">
-                      <div class="zib-tile__line">km: <span class="zib-val">{{ displayKm(f) }}</span></div>
-                      <div class="zib-tile__line">Mann: <span class="zib-val">{{ displayMann(f) }}</span></div>
+            <!-- Tagebuch -->
+            @if (entriesForDisplay(e).length > 0) {
+              <div class="restv2-logcols">
+                @for (entry of entriesForDisplay(e); track entry.id) {
+                  <div class="restv2-logitem restv2-logitem--column">
+                    <div class="restv2-logitem__head">
+                      <span class="restv2-chip">{{ entry.meldungskategorie }}</span>
+                      <span class="restv2-time">{{ entry.datetime_iso | date:'dd.MM.yyyy, HH:mm:ss' }}</span>
+                    </div>
+                    <div class="restv2-logitem__text">
+                      @if (entry.fzg) { <span class="restv2-fzg">[{{ entry.fzg }}]</span> }
+                      <span class="restv2-text">{{ entry.text }}</span>
+                      @if (entry.verfasst_von.anzeige_name) {
+                        <span class="restv2-author">&mdash; {{ entry.verfasst_von.anzeige_name }}</span>
+                      }
                     </div>
                   </div>
                 }
               </div>
+            } @else {
+              <div class="restv2-logempty">Noch keine Einträge vorhanden.</div>
+            }
+          </div>
+
+          <!-- Fahrzeuge / Fallback -->
+          @if (!!e.fahrzeuge?.length) {
+            <footer class="restv2-card__footer">
+              <div class="vbtn-row" role="group" aria-label="Fahrzeuge">
+                @for (f of e.fahrzeuge; track f.rufname) {
+                  <button type="button" class="vbtn" [ngClass]="btnClass(f)" [attr.title]="btnTitle(f)">
+                    <div class="vbtn__name">{{ nameOf(f) }}</div>
+                    <div class="vbtn__meta">km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}</div>
+                  </button>
+                }
+              </div>
+            </footer>
+          } @else {
+            <footer class="restv2-card__footer">
+              <div class="no-fzg-badge" role="note">Keine Fahrzeuge disponiert</div>
             </footer>
           }
         </article>
       }
     </div>
   } @else {
-    <!-- > 2 Einsätze: Carousel mit 2 Karten pro Slide -->
+    <!-- 1 pro Slide, Schrittweite 100% -->
     <div class="restv2-carousel" role="region" aria-roledescription="carousel">
       <div
         class="restv2-track"
-        [style.transform]="'translateX(-' + (pageIndex() * 100) + '%)'"
+        [style.transform]="'translateX(-' + (slideIndex() * 100) + '%)'"
+        [style.transition]="noTransition() ? 'none' : 'transform 600ms ease'"
+        (transitionend)="onTransitionEnd($event)"
         aria-live="polite"
       >
-        @for (page of pages(); let pi = $index; track pi) {
-          <div class="restv2-page" [attr.aria-label]="'Seite ' + (pi + 1)">
-            @for (e of page; track e.einsatznummer) {
-              <article class="restv2-card panel" aria-label="Offener Einsatz">
-                <header class="restv2-card__header">
-                  <div class="restv2-card__title">
-                    <span class="restv2-card__einsatznr">{{ e.einsatznummer }}</span>
-                    <span class="restv2-card__alarmstufe">{{ e.alarmstufe }}</span>
-                  </div>
-                  <div class="restv2-card__subtitle">
-                    <span class="restv2-card__ort">
-                      @if (e.ort) { {{ e.ort }} } @else { – }
-                    </span>
-                    <span class="restv2-card__time">
-                      {{ e.einsatzdatum_iso | date:'dd.MM.yyyy, HH:mm' }}
-                    </span>
-                  </div>
-                </header>
+        @for (e of slides(); let i = $index; track i) {
+          <article class="restv2-card restv2-slide panel" aria-label="Offener Einsatz">
+            <header class="restv2-card__header">
+              <div class="restv2-card__title">
+                <span class="restv2-card__einsatznr">{{ e.einsatznummer }}</span>
+                <span class="restv2-card__alarmstufe">{{ e.alarmstufe }}</span>
+              </div>
+              <div class="restv2-card__subtitle">
+                <span class="restv2-card__ort">@if (e.ort) { {{ e.ort }} } @else { &mdash; }</span>
+                <span class="restv2-card__time">{{ e.einsatzdatum_iso | date:'dd.MM.yyyy, HH:mm' }}</span>
+              </div>
+            </header>
 
-                <div class="restv2-card__body">
-                  <div class="restv2-card__grund">
-                    {{ e.grund }}
-                  </div>
+            <div class="restv2-card__body">
+              <div class="restv2-card__grund">{{ e.grund }}</div>
 
-                  <div class="restv2-logcols">
-                    @for (entry of entriesForDisplay(e); track entry.id) {
-                      <div class="restv2-logitem restv2-logitem--column">
-                        <div class="restv2-logitem__head">
-                          <span class="restv2-chip">{{ entry.meldungskategorie }}</span>
-                          <span class="restv2-time">{{ entry.datetime_iso | date:'dd.MM.yyyy, HH:mm:ss' }}</span>
-                        </div>
-                        <div class="restv2-logitem__text">
-                          @if (entry.fzg) { <span class="restv2-fzg">[{{ entry.fzg }}]</span> }
-                          <span class="restv2-text">{{ entry.text }}</span>
-                          @if (entry.verfasst_von?.anzeige_name) {
-                            <span class="restv2-author">– {{ entry.verfasst_von.anzeige_name }}</span>
-                          }
-                        </div>
+              @if (entriesForDisplay(e).length > 0) {
+                <div class="restv2-logcols">
+                  @for (entry of entriesForDisplay(e); track entry.id) {
+                    <div class="restv2-logitem restv2-logitem--column">
+                      <div class="restv2-logitem__head">
+                        <span class="restv2-chip">{{ entry.meldungskategorie }}</span>
+                        <span class="restv2-time">{{ entry.datetime_iso | date:'dd.MM.yyyy, HH:mm:ss' }}</span>
                       </div>
-                    }
-                  </div>
-                </div>
-
-                <!-- Unterer Bereich: Kacheln -->
-                @if (e.fahrzeuge?.length) {
-                  <footer class="restv2-card__footer">
-                    <div class="zib-tile-row d-flex flex-wrap justify-content-between align-items-end gap-2">
-                      @for (f of e.fahrzeuge; track f.funkrufname) {
-                        <div
-                          class="zib-tile"
-                          [ngClass]="tileClassFzg(f)"
-                          [attr.title]="tileTitle(f)"
-                          role="status"
-                          aria-live="polite">
-                          <div class="zib-tile__name">{{ displayName(f) }}</div>
-                          <div class="zib-tile__meta">
-                            <div class="zib-tile__line">km: <span class="zib-val">{{ displayKm(f) }}</span></div>
-                            <div class="zib-tile__line">Mann: <span class="zib-val">{{ displayMann(f) }}</span></div>
-                          </div>
-                        </div>
-                      }
+                      <div class="restv2-logitem__text">
+                        @if (entry.fzg) { <span class="restv2-fzg">[{{ entry.fzg }}]</span> }
+                        <span class="restv2-text">{{ entry.text }}</span>
+                        @if (entry.verfasst_von.anzeige_name) {
+                          <span class="restv2-author">&mdash; {{ entry.verfasst_von.anzeige_name }}</span>
+                        }
+                      </div>
                     </div>
-                  </footer>
-                }
-              </article>
+                  }
+                </div>
+              } @else {
+                <div class="restv2-logempty">Noch keine Einträge vorhanden.</div>
+              }
+            </div>
+
+            @if (!!e.fahrzeuge?.length) {
+              <footer class="restv2-card__footer">
+                <div class="vbtn-row" role="group" aria-label="Fahrzeuge">
+                  @for (f of e.fahrzeuge; track f.rufname) {
+                    <button type="button" class="vbtn" [ngClass]="btnClass(f)" [attr.title]="btnTitle(f)">
+                      <div class="vbtn__name">{{ nameOf(f) }}</div>
+                      <div class="vbtn__meta">km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}</div>
+                    </button>
+                  }
+                </div>
+              </footer>
+            } @else {
+              <footer class="restv2-card__footer">
+                <div class="no-fzg-badge" role="note">Keine Fahrzeuge disponiert</div>
+              </footer>
             }
-          </div>
+          </article>
         }
       </div>
     </div>
   }
 </div>
+

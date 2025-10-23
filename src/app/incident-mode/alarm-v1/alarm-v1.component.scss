@@ -4,6 +4,7 @@
   grid-template-columns: 0.58fr 0.42fr;
   gap: 5px;
   height: 100%;
+  padding: 0px 1rem;
 }
 .col-left { display: grid; grid-template-rows: auto 1fr; gap: 5px; min-height: 0; }
 .col-right { display: grid; grid-template-rows: 1fr; min-height: 0; }

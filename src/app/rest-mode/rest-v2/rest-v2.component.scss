@@ -1,159 +1,148 @@
 :host { display:block; width:100%; height:100%; }
 
-/* Inhalt = volle Bildschirmhöhe; keine globale Scrollbar */
-.restv2-content { height:100%; min-height:0; overflow:hidden; padding:12px; }
-
-/* Gleich hohe Panels pro Zeile */
-.restv2-grid {
-  display:flex; flex-wrap:wrap; gap:16px; align-items:stretch; height:100%;
+/* außen (screen-content) hat seitlich 0 → wir geben top/bottom Luft */
+.restv2-content{
+  height:100%; min-height:0; overflow:hidden;
+  padding: 1.25rem 0;
 }
 
-/* Panel */
-.restv2-card {
-  flex:1 1 360px;
+/* Variablen */
+:host{
+  --side-gutter: 1.25rem; /* Seiten-Gutter der ganzen Komponente */
+  --side-gap: 16px;       /* sichtbarer Abstand links/rechts pro Karte (Carousel) */
+  --grid-gap: 16px;       /* Abstand zwischen Karten, wenn ≤2 Einsätze (Grid) */
+  --panel-radius: 16px;
+  --danger: #e53935;
+  --danger-ink: #fff;
+}
+
+/* ===== Single (kein Carousel) ===== */
+.restv2-single{
+  height:100%;
+  padding-inline: var(--side-gutter);
+  display:flex; align-items:stretch;
+}
+.restv2-single > .restv2-card{ flex:1 1 auto; }
+
+/* ===== Panel ===== */
+.restv2-card{
   display:flex; flex-direction:column;
-  min-height:420px; max-height:100%; height:100%;
-  border-radius:16px; overflow:hidden; background-clip:padding-box; isolation:isolate;
+  min-height:420px; height:100%;
+  border-radius: var(--panel-radius);
+  overflow:hidden; background-clip:padding-box; isolation:isolate;
   background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
   border:1px solid rgba(255,255,255,0.08);
   box-shadow:0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
   color:#e9ecef;
 }
+
+/* Header – etwas größer */
 .restv2-card__header{
-  padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.08);
+  padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.08);
   background:rgba(0,0,0,0.15); backdrop-filter:blur(4px);
-  border-top-left-radius:inherit; border-top-right-radius:inherit;
 }
-.restv2-card__title{ display:flex; align-items:baseline; gap:10px; margin-bottom:2px; }
-.restv2-card__einsatznr{ font-weight:700; font-size:16px; color:#fff; }
-.restv2-card__alarmstufe{ font-weight:600; font-size:14px; color:#cfd6e4; }
+.restv2-card__title{ display:flex; align-items:baseline; gap:12px; margin-bottom:4px; }
+.restv2-card__einsatznr{ font-weight:800; font-size:20px; color:#fff; letter-spacing:.2px; }
+.restv2-card__alarmstufe{ font-weight:600; font-size:16px; color:#cfd6e4; }
 .restv2-card__subtitle{
   display:flex; align-items:center; justify-content:space-between; gap:12px;
-  font-size:13px; color:rgba(255,255,255,0.75);
+  font-size:14px; color:rgba(255,255,255,0.78);
 }
 
-/* Body füllt Rest */
+/* Body */
 .restv2-card__body{
-  display:flex; flex-direction:column; gap:10px;
-  padding:12px 14px 14px 14px; min-height:0; flex:1 1 auto; overflow:hidden;
+  display:flex; flex-direction:column; gap:12px;
+  padding:14px 16px 16px 16px; min-height:0; flex:1 1 auto; overflow:hidden;
 }
-.restv2-card__grund{ font-size:14px; color:#e9ecef; }
+.restv2-card__grund{ font-size:16px; font-weight:600; color:#e9ecef; }
 
-/* Spalten-Layout für Logeinträge (statt Scrollen) */
+/* Tagebuch: 2 Spalten stabil */
 .restv2-logcols{
   height:100%; min-height:0;
-  column-count: 2;
-  column-gap: 12px;
-  column-fill: auto;
-  overflow: hidden;
+  column-count: 2; column-gap: 14px; column-fill: auto; overflow:hidden;
 }
-.restv2-logitem--column{
-  display: inline-block;
-  width: 100%;
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  -moz-column-break-inside: avoid;
-  margin-bottom: 8px;
-}
+.restv2-logitem--column{ display:inline-block; width:100%; break-inside:avoid; margin-bottom:10px; }
 .restv2-logitem{
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:12px; padding:8px 10px;
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:10px 12px;
 }
-.restv2-logitem__head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
-.restv2-chip{ display:inline-block; padding:3px 8px; font-size:12px; border-radius:999px;
+.restv2-logitem__head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.restv2-chip{ display:inline-block; padding:4px 9px; font-size:13px; border-radius:999px;
   background:rgba(138,180,255,0.12); color:#8ab4ff; border:1px solid rgba(138,180,255,0.35);
 }
-.restv2-time{ font-size:12px; color:rgba(255,255,255,0.75); }
-.restv2-logitem__text{ font-size:13px; color:#e9ecef; white-space:pre-wrap; word-break:break-word; }
-.restv2-fzg{ font-weight:600; margin-right:6px; color:#cfe1ff; }
-.restv2-author{ margin-left:6px; color:rgba(255,255,255,0.7); }
+.restv2-time{ font-size:12.5px; color:rgba(255,255,255,0.75); }
+.restv2-logitem__text{ font-size:14px; color:#e9ecef; white-space:pre-wrap; word-break:break-word; }
+.restv2-fzg{ font-weight:700; margin-right:6px; color:#cfe1ff; }
+.restv2-author{ margin-left:6px; color:rgba(255,255,255,0.72); }
 
-.restv2-empty{ height:100%; display:grid; place-items:center; font-size:16px; color:rgba(255,255,255,0.75); }
-
-/* --- Carousel --- */
-.restv2-carousel{
-  position:relative;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  border-radius:16px;
-}
-.restv2-track{
-  display:flex;
-  height:100%;
-  transition: transform 600ms ease;
-  will-change: transform;
-}
-.restv2-page{
-  flex: 0 0 100%;
-  height: 100%;
-  padding: 0;
-  display:flex; gap:16px;
-  align-items:stretch;
-}
-.restv2-page > .restv2-card{ flex: 1 1 0; }
-
-/* RESPONSIV: unter 1200px lieber 1 Spalte innerhalb der Karte */
-@media (max-width: 1199.98px) {
-  .restv2-logcols { column-count: 1; }
+/* Tagebuch leer */
+.restv2-logempty{
+  display:flex; align-items:center; justify-content:center;
+  min-height:120px;
+  border:1px dashed rgba(255,255,255,0.2);
+  border-radius:12px;
+  font-size:14px; color:rgba(255,255,255,0.75);
 }
 
-/* ===== Unterer Bereich: Kacheln (statt Tabelle/Badges) ===== */
+/* Footer – Fahrzeug-Buttons + Fallback */
 .restv2-card__footer{
   border-top: 1px solid rgba(255,255,255,0.08);
   background: rgba(0,0,0,0.12);
-  padding: 10px 12px;
+  padding: 10px 10px;
 }
 
-/* Zeile: space-between + Wrap */
-.zib-tile-row{
-  min-height: 2.5rem;
+.no-fzg-badge{
+  width:100%;
+  text-align:center;
+  padding:12px 14px;
+  border-radius:12px;
+  background: var(--danger);
+  color: var(--danger-ink);
+  font-weight:800;
+  letter-spacing:.3px;
+  text-transform: none;
 }
 
-/* Kacheln: quadratisch mit kleinem Radius */
-.zib-tile{
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
-  align-items:flex-start;
-  gap:4px;
-  min-width: 120px;
-  max-width: 180px;
-  padding:10px 12px;
-  border-radius:6px;            /* kleiner Radius => eher quadratisch */
-  color:#fff;
-  user-select:none;
+.vbtn-row{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8px;
+}
+.vbtn{
+  appearance:none; border:0; width:100%;
+  padding:10px 12px; border-radius:12px; color:#fff; text-align:center; cursor:default;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10);
+}
+.vbtn__name{ font-weight:900; font-size:18px; line-height:1.1; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vbtn__meta{ font-size:14px; line-height:1.15; opacity:.98; white-space:nowrap; }
+
+.vbtn-ok { background:#00c853; }
+.vbtn-bad{ background:var(--danger); }
+
+/* ===== Grid-Layout für ≤2 Einsätze ===== */
+.restv2-grid{
+  display:flex; flex-wrap:wrap; align-items:stretch; height:100%;
+  padding-inline: var(--side-gutter);
+  gap: var(--grid-gap);
 }
 
-/* Name oben */
-.zib-tile__name{
-  font-weight:700;
-  line-height:1.1;
-  font-size:14px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+/* ===== Carousel: 1 Karte pro Slide ===== */
+.restv2-carousel{
+  position:relative; width:100%; height:100%; overflow:hidden;
+  padding-inline: var(--side-gutter); /* Seitengutter */
+}
+.restv2-track{
+  display:flex; height:100%; will-change: transform;
+}
+.restv2-slide{
+  flex: 0 0 100%;
+  min-width: 0;
+  padding-inline: var(--side-gap); /* sichtbarer Randabstand pro Karte */
 }
 
-/* Werte unten, untereinander */
-.zib-tile__meta{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  font-size:13px;
-  line-height:1.2;
-  opacity:0.95;
-}
-.zib-tile__line{ white-space:nowrap; }
-.zib-val{ font-weight:600; }
-
-/* Farben: knalliges Grün bei vollständig, sonst kräftiges Rot */
-.tile-ok{
-  background:#00c853;           /* vivid green */
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
-}
-.tile-bad{
-  background:#e53935;           /* strong red */
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+/* Leerer-State ganz oben */
+.restv2-empty{
+  height:100%; display:grid; place-items:center;
+  font-size:16px; color:rgba(255,255,255,0.75);
 }

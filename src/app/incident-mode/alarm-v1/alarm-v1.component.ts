@@ -24,6 +24,18 @@ interface RoleBox {
   showNames: boolean;  // globales Flag: nur wenn KEINE Kategorie > 6
 }
 
+/** fixes Tupel – genau vier Boxen */
+type RoleBoxTuple = [RoleBox, RoleBox, RoleBox, RoleBox];
+
+function createRoleBoxes(): RoleBoxTuple {
+  return [
+    { key: 'EL',    label: 'EL',             yesNames: [], yesCount: 0, showNames: true },
+    { key: 'ELMIT', label: 'Einsatzleitung', yesNames: [], yesCount: 0, showNames: true },
+    { key: 'ATS',   label: 'ATS',            yesNames: [], yesCount: 0, showNames: true },
+    { key: 'C',     label: 'C-Fahrer',       yesNames: [], yesCount: 0, showNames: true }
+  ];
+}
+
 @Component({
   selector: 'app-alarm-v1',
   standalone: true,
@@ -35,6 +47,7 @@ export class AlarmV1Component implements OnInit, AfterViewInit, OnDestroy, OnCha
   @Input() einsatz: Einsatz | null = null;
   /** Optional: aktuelle Zeit (für Elapsed/Timer-Anzeigen) */
   @Input() now: Date = new Date();
+
   // --- Karte (rechter Bereich) ---
   private map?: L.Map;
   private marker?: L.Marker;
@@ -42,19 +55,13 @@ export class AlarmV1Component implements OnInit, AfterViewInit, OnDestroy, OnCha
   private mapInterval?: any;
 
   // --- Uhr für „Seit Alarm“ (oben links im Info-Panel) ---
-  // now = new Date();
   private clockHandle?: any;
 
   // --- Rückmeldungen & Rollen (linkes unteres Panel) ---
   peopleYes: PersonView[] = [];
   peopleNo: PersonView[] = [];
 
-  roleBoxes: RoleBox[] = [
-    { key: 'EL',    label: 'EL',             yesNames: [], yesCount: 0, showNames: true },
-    { key: 'ELMIT', label: 'Einsatzleitung', yesNames: [], yesCount: 0, showNames: true }, // „EL - Mit“
-    { key: 'ATS',   label: 'ATS',            yesNames: [], yesCount: 0, showNames: true },
-    { key: 'C',     label: 'C-Fahrer',       yesNames: [], yesCount: 0, showNames: true }
-  ];
+  roleBoxes: RoleBoxTuple = createRoleBoxes();
 
   /** Wenn irgendeine Rolle >6 Zusagen hat → Namen unten ausblenden & Badges in der Liste zeigen */
   showBadgesPerUser = false;
@@ -164,12 +171,7 @@ export class AlarmV1Component implements OnInit, AfterViewInit, OnDestroy, OnCha
 
     this.peopleYes = [];
     this.peopleNo  = [];
-    this.roleBoxes = [
-      { key: 'EL',    label: 'EL',             yesNames: [], yesCount: 0, showNames: true },
-      { key: 'ELMIT', label: 'Einsatzleitung', yesNames: [], yesCount: 0, showNames: true },
-      { key: 'ATS',   label: 'ATS',            yesNames: [], yesCount: 0, showNames: true },
-      { key: 'C',     label: 'C-Fahrer',       yesNames: [], yesCount: 0, showNames: true }
-    ];
+    this.roleBoxes = createRoleBoxes();
 
     // Quelle ggf. begrenzen
     const srcAll = this.einsatz?.alarmedpersons ?? [];
