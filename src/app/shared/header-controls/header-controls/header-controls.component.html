@@ -1,71 +1,79 @@
 <!-- Nur anzeigen, wenn ?dev=1 -->
 <ng-container *ngIf="show">
   <div class="hc" role="region" aria-label="Dev-Dashboard">
+
+    <!-- Linker Drag-Handle (fixe linke Spalte, über alle Reihen) -->
     <div class="hc__drag" (mousedown)="onDragStart($event)" title="Dev-Dashboard verschieben">
       Dev-Dashboard
     </div>
 
-    <!-- Alarmscreen -->
-    <div class="hc__col">
-      <div class="hc__heading">Alarmscreen</div>
-      <button
-        class="hc__btn"
-        [class.is-active]="incidentActive === 'v1'"
-        [attr.aria-pressed]="incidentActive === 'v1'"
-        (click)="setIncident('v1')">
-        Alarm&nbsp;1
-      </button>
-      <button
-        class="hc__btn"
-        [class.is-active]="incidentActive === 'v2'"
-        [attr.aria-pressed]="incidentActive === 'v2'"
-        (click)="setIncident('v2')">
-        Alarm&nbsp;2
-      </button>
-    </div>
+    <!-- Überschriften (Row 1) -->
+    <div class="hc__heading hc__head--alarm">Alarmscreen</div>
+    <div class="hc__heading hc__head--rest">Ruhemodus</div>
+    <div class="hc__heading hc__head--test">Test</div>
+    <div class="hc__heading hc__head--input">Anzahl Rückmeldungen</div>
 
-    <!-- Ruhemodus -->
-    <div class="hc__col">
-      <div class="hc__heading">Ruhemodus</div>
-      <button
-        class="hc__btn"
-        [class.is-active]="restActive === 'v1'"
-        [attr.aria-pressed]="restActive === 'v1'"
-        (click)="setRest('v1')">
-        Ruhe&nbsp;1
-      </button>
-      <button
-        class="hc__btn"
-        [class.is-active]="restActive === 'v2'"
-        [attr.aria-pressed]="restActive === 'v2'"
-        (click)="setRest('v2')">
-        Ruhe&nbsp;2
-      </button>
-    </div>
+    <!-- Erste Button-Reihe (Row 2) -->
+    <button
+      class="hc__btn hc__cell--alarm1"
+      [class.is-active]="incidentActive === 'v1'"
+      [attr.aria-pressed]="incidentActive === 'v1'"
+      (click)="setIncident('v1')">
+      Alarm&nbsp;1
+    </button>
 
-    <!-- Test (zweifache Höhe) -->
-    <div class="hc__col hc__col--test">
-      <div class="hc__heading">Test</div>
-      <button
-        class="hc__btn hc__btn--test"
-        [class.is-active]="testActive"
-        [attr.aria-pressed]="testActive"
-        (click)="toggleTest()">
-        TEST
-      </button>
-    </div>
+    <button
+      class="hc__btn hc__cell--rest1"
+      [class.is-active]="restActive === 'v1'"
+      [attr.aria-pressed]="restActive === 'v1'"
+      (click)="setRest('v1')">
+      Ruhe&nbsp;1
+    </button>
 
-    <!-- Anzahl Rückmeldungen (rechts daneben) -->
-    <div class="hc__col hc__col--input">
-      <div class="hc__heading">Anzahl&nbsp;Rückmeldungen</div>
+    <!-- TEST – spannt über Row 2..4 in der Test-Spalte -->
+    <button
+      class="hc__btn hc__btn--test hc__cell--testspan"
+      [class.is-active]="testActive"
+      [attr.aria-pressed]="testActive"
+      (click)="toggleTest()">
+      TEST
+    </button>
+
+    <!-- Input rechts neben TEST (Row 2) -->
+    <div class="input">
       <input
-        id="hc-user"
-        class="hc__input"
-        type="text"
-        placeholder="z. B. 15"
-        [(ngModel)]="userValue"
-        (keydown.enter)="submitUser()"
-      />
+      id="hc-user"
+      class="hc__input hc__cell--input"
+      type="text"
+      placeholder="z. B. 15"
+      [(ngModel)]="userValue"
+      (keydown.enter)="submitUser()" />
+    </div>
+
+    <!-- Zwischen-Überschrift unter TEST (Row 3) -->
+    <div class="hc__heading hc__head--alarmtimes">Alarmzeiten</div>
+
+    <!-- Zweite Button-Reihe (Row 4) -->
+    <button
+      class="hc__btn hc__cell--alarm2"
+      [class.is-active]="incidentActive === 'v2'"
+      [attr.aria-pressed]="incidentActive === 'v2'"
+      (click)="setIncident('v2')">
+      Alarm&nbsp;2
+    </button>
+
+    <button
+      class="hc__btn hc__cell--rest2"
+      [class.is-active]="restActive === 'v2'"
+      [attr.aria-pressed]="restActive === 'v2'"
+      (click)="setRest('v2')">
+      Ruhe&nbsp;2
+    </button>
+
+    <!-- Alarmzeiten-Buttons (unten, gleiche Zeile wie Alarm2/Ruhe2) -->
+    <div class="hc__btnrow hc__cell--alarmrow">
+      <button class="hc__btn hc__btn--alarm" (click)="setAlarm('-45m')">-45</button>
+      <button class="hc__btn hc__btn--alarm" (click)="setAlarm('-15m')">-15</button>
     </div>
   </div>
 </ng-container>

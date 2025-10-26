@@ -47,11 +47,9 @@ export interface EinsatzGruppe {
   ort: string | null;
   grund: string;
   einsatzdatum_iso: IsoDatetime;
-  /** zusätzliche Felder aus deiner API */
   einsatzzeitein_iso?: IsoDatetime | null;
   einsatzzeitaus_iso?: IsoDatetime | null;
   einsatzzeitalarm_iso?: IsoDatetime | null;
-
   tagebuch: TagebuchEintrag[];
   fahrzeuge?: Fahrzeug[];
 }
@@ -103,7 +101,7 @@ export class RestV2Component implements OnInit, OnDestroy {
   readonly loading = computed(() => this.loadingSig());
   readonly error = computed(() => this.errorSig());
 
-  /** Offene Einsätze (neueste zuerst) */
+  /** Offene EinsÃ¤tze (neueste zuerst) */
   readonly offeneEinsaetze = computed<EinsatzGruppe[]>(() => {
     const data = this.payloadSig()?.data?.einsatz_offen;
     if (!data) return [];
@@ -132,7 +130,7 @@ export class RestV2Component implements OnInit, OnDestroy {
   constructor(private http: HttpClient, private route: ActivatedRoute) {
     // dev per Query-Param ?dev=1
     const dev = this.route.snapshot.queryParamMap.get('dev');
-    this.CAROUSEL_INTERVAL = dev === '1' ? 8_000 : 8_000;
+    this.CAROUSEL_INTERVAL = dev === '1' ? 2_000 : 8_000;
 
     effect(() => void this.errorSig());
 
@@ -183,7 +181,7 @@ export class RestV2Component implements OnInit, OnDestroy {
     this.http.get<ApiResponse>(this.currentApiUrl(), { responseType: 'json' as const }).subscribe({
       next: (resp) => {
         if (!resp || resp.ok !== true || !resp.data) {
-          this.errorSig.set('Ungültige API-Antwort.'); this.payloadSig.set(null);
+          this.errorSig.set('UngÃ¼ltige API-Antwort.'); this.payloadSig.set(null);
         } else {
           this.payloadSig.set(resp); this.errorSig.set(null);
         }
@@ -262,32 +260,7 @@ export class RestV2Component implements OnInit, OnDestroy {
     return 'Besatzung fehlt';
   }
 
-  /** Status-Checks für Badges */
-  hasCategory(e: EinsatzGruppe, cat: string): boolean {
-    const needle = (cat || '').toLowerCase();
-    return (e?.tagebuch ?? []).some(t => (t.meldungskategorie || '').toLowerCase() === needle);
-  }
-
-  allVehiclesComplete(e: EinsatzGruppe): boolean {
-    const list = e?.fahrzeuge ?? [];
-    if (list.length === 0) return false;
-    return list.every(f => this.isCompleteFzg(f));
-  }
-
-  /** Zeiten ok = alle gesetzt:
-   *  - am Einsatz: alarm, aus, ein
-   *  - und bei jedem Fahrzeug: aus_iso & ein_iso
-   */
-  einsatzzeitenOk(e: EinsatzGruppe): boolean {
-    const einsatzTimesOk =
-      this._isPresent(e?.einsatzzeitalarm_iso) &&
-      this._isPresent(e?.einsatzzeitaus_iso) &&
-      this._isPresent(e?.einsatzzeitein_iso);
-    console.log(einsatzTimesOk);
-    return !!einsatzTimesOk;
-  }
-
-  // History: kurze Übersicht (neueste zuerst)
+  // History: kurze Ãœbersicht (neueste zuerst)
   history() {
     const arr = this.payloadSig()?.data?.einsatzhistory ?? [];
     const items = [...arr].filter(h => (h?.einsatzstatus || 'beendet') === 'beendet');
@@ -295,7 +268,7 @@ export class RestV2Component implements OnInit, OnDestroy {
     return items;
   }
 
-  // 'vor x Tagen/Stunden/Minuten' für History
+  // 'vor x Tagen/Stunden/Minuten' fÃ¼r History
   agoText(iso: string): string {
     const t = Date.parse(iso);
     if (!Number.isFinite(t)) return '';
@@ -308,4 +281,29 @@ export class RestV2Component implements OnInit, OnDestroy {
     const m = Math.max(0, min);
     return m <= 1 ? 'vor 1 Minute' : `vor ${m} Minuten`;
   }
-}
+
+  // --- Zusammenfassungs-Badges (7 Stück) ---
+  private _catSet(e: EinsatzGruppe): Set<string> {
+    const s = new Set<string>();
+    for (const en of e?.tagebuch ?? []) {
+      const c = (en?.meldungskategorie || '').trim().toLowerCase();
+      if (c) s.add(c);
+    }
+    return s;
+  }
+  hasCategory(e: EinsatzGruppe, name: string): boolean {
+    const key = (name || '').trim().toLowerCase();
+    if (!key) return false;
+    return this._catSet(e).has(key);
+  }
+  allVehiclesComplete(e: EinsatzGruppe): boolean {
+    const list = e?.fahrzeuge ?? [];
+    if (list.length === 0) return false;
+    return list.every((f) => this.isCompleteFzg(f));
+  }
+  einsatzzeitenOk(e: EinsatzGruppe): boolean {
+    const ein = (e?.einsatzzeitein_iso || '').toString().trim();
+    const aus = (e?.einsatzzeitaus_iso || '').toString().trim();
+    return !!ein && !!aus;
+  }}\r\n
+

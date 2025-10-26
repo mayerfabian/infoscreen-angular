@@ -1,4 +1,8 @@
-<section class="panel">
+<!-- Umschalten: Wenn Alarm älter als 30 Minuten → RestV2 anzeigen -->
+<app-rest-v2 *ngIf="isOlderThan30Min(einsatz)"></app-rest-v2>
+
+<!-- Ansonsten die Alarm-V2 Straßen/Karten-Ansicht -->
+<section class="panel" *ngIf="!isOlderThan30Min(einsatz)">
   <div class="panel-header">
     <div class="left d-flex align-items-center gap-2">
       <h2 class="mb-0">Straßenansicht</h2>
@@ -23,13 +27,15 @@
         </ng-container>
       </span>
     </div>
-<!-- 
+
+    <!--
     <div class="center header-actions">
       <div class="btn-group">
         <button type="button" class="btn btn-sm btn-outline-light" (click)="goTo('v1')">Alarm 1</button>
         <button type="button" class="btn btn-sm btn-light" (click)="goTo('v2')">Alarm 2</button>
       </div>
-    </div> -->
+    </div>
+    -->
 
     <div class="right header-actions">
       <input

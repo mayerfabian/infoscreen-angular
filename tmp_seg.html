@@ -1,0 +1,17 @@
+﻿      } @else {
+              <div class="restv2-logempty">Noch keine EintrÃƒÂ¤ge vorhanden.</div>
+            }
+          </div>
+
+          <!-- Fahrzeuge / Fallback -->
+          @if (!!e.fahrzeuge?.length) {
+            <footer class="restv2-card__footer">
+              <div class="vbtn-row" role="group" aria-label="Fahrzeuge">
+                @for (f of e.fahrzeuge; track f.rufname) {
+                  <button type="button" class="vbtn" [ngClass]="btnClass(f)" [attr.title]="btnTitle(f)">
+                    <div class="vbtn__name">{{ nameOf(f) }}</div>
+                    <div class="vbtn__meta">km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}</div>
+                  </button>
+                }
+              </div>
+              <div class="sbadge-row" role="group" aria

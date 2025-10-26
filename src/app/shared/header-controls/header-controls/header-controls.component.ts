@@ -219,4 +219,16 @@ export class HeaderControlsComponent implements OnInit, OnDestroy {
     q.keys.forEach((k) => (base[k] = q.get(k)));
     return { ...base, ...overrides };
   }
+  /** ?alarm=-45m oder -15m setzen */
+  async setAlarm(value: string) {
+    const root = this.getRoot(this.route);
+    await this.router.navigate([], {
+      relativeTo: root,
+      queryParams: { alarm: value },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+
 }

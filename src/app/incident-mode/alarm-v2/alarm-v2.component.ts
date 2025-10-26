@@ -1,12 +1,13 @@
 import {
   Component, Input, OnChanges, SimpleChanges, ElementRef, ViewChild,
-  AfterViewInit, OnDestroy, NgZone
+  AfterViewInit, OnDestroy, NgZone, OnInit
 } from '@angular/core';
 import { CommonModule, NgIf, NgFor, DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Einsatz } from '../../models/lea.interfaces';
 import { environment } from '../../../environments/environments';
 import * as L from 'leaflet';
+import { RestV2Component } from '../../rest-mode/rest-v2/rest-v2.component';
 
 type SvStatus = 'unknown' | 'checking' | 'ok' | 'none' | 'error';
 type RouteStatus = 'idle' | 'loading' | 'ok' | 'fail';
@@ -14,14 +15,14 @@ type RouteStatus = 'idle' | 'loading' | 'ok' | 'fail';
 @Component({
   selector: 'app-alarm-v2',
   standalone: true,
-  imports: [CommonModule, NgIf, NgFor],
+  imports: [CommonModule, NgIf, NgFor, RestV2Component],
   templateUrl: './alarm-v2.component.html',
   styleUrls: ['./alarm-v2.component.scss']
 })
-export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
+export class AlarmV2Component implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @Input() einsatz: Einsatz | null = null;
 
-  /** Optional: aktuelle Zeit (für Elapsed/Timer-Anzeigen) */
+  /** Optional: aktuelle Zeit (für Timer/Umschalt-Logik) */
   @Input() now: Date = new Date();
 
   @ViewChild('panelBody') panelBodyRef?: ElementRef<HTMLDivElement>;
@@ -68,26 +69,56 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   // Anzeige-Wechsel SV <-> Karte
   showStreetView = false;               // Start: Karte
   private ALT_MAP_MS = 15 * 1000;       // 15 s Karte
-  private ALT_SV_MS  = 5 * 1000;        // 7 s StreetView
+  private ALT_SV_MS  = 5 * 1000;        // 5–7 s StreetView
   private altTimer?: any;
 
   // Distanz-Schwelle
   private readonly DISTANCE_LIMIT_KM = 2;
 
-  constructor(private zone: NgZone, private router: Router) {}
+  // --- NEU: Alarmzeit-Override via GET (?alarm=...) ---
+  private alarmOverrideMs: number | null = null;
+  private clockHandle?: any;
 
-  // ---------------- Lifecycle ----------------
+  constructor(
+    private zone: NgZone,
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {}
+
+  /* ================= Lifecycle ================= */
+
+  ngOnInit(): void {
+    this.readAlarmOverrideFromRoute();
+
+    // Reaktiv auf Query-Param-Änderungen (z. B. ?alarm=...)
+    this.route.queryParamMap.subscribe(() => {
+      const before = this.alarmOverrideMs;
+      this.readAlarmOverrideFromRoute();
+      if (before !== this.alarmOverrideMs) {
+        // Umschalt-Bedingung kann sich ändern; Map/SV nur aktiv, wenn wir auch angezeigt werden
+        if (!this.isOlderThan30Min(this.einsatz)) {
+          this.ensureLeaflet(true);
+          this.updateAlternateTimer();
+        }
+      }
+    });
+
+    // Sekundentakt, damit die 30-Minuten-Schwelle live greift
+    this.clockHandle = setInterval(() => { this.now = new Date(); }, 1000);
+  }
+
   ngAfterViewInit(): void {
-    this.setupResizeObserver();
-    setTimeout(() => this.recalcSizes(), 0);
-
     // Leaflet-Resize-Fix
     this.zone.runOutsideAngular(() => {
       this.mapTick = setInterval(() => this.map?.invalidateSize(), 500);
     });
 
+    // Größenbeobachtung nur, wenn V2 sichtbar ist
+    this.setupResizeObserver();
+    setTimeout(() => this.recalcSizes(), 0);
+
     // Ohne Key → Leaflet sofort
-    if (this.missingKey && !this.missingCoords) {
+    if (this.missingKey && !this.missingCoords && !this.isOlderThan30Min(this.einsatz)) {
       this.svStatus = 'error';
       this.ensureLeaflet(true);
       this.updateAlternateTimer();
@@ -98,11 +129,15 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     this.resizeObs?.disconnect();
     if (this.mapTick) clearInterval(this.mapTick);
     if (this.altTimer) clearTimeout(this.altTimer);
+    if (this.clockHandle) clearInterval(this.clockHandle);
     this.map?.remove();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('einsatz' in changes) {
+      // Wenn älter als 30 Min → V2 UI wird nicht angezeigt; teure Operationen überspringen
+      if (this.isOlderThan30Min(this.einsatz)) return;
+
       const lat = this.einsatz?.location?.x;
       const lon = this.einsatz?.location?.y;
       this.coordString = (lat != null && lon != null) ? `${lat}, ${lon}` : '';
@@ -115,12 +150,62 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     }
   }
 
-  // ---------------- Guards ----------------
+  /* ================= Guards & Helpers ================= */
+
   get missingKey(): boolean {
     return !(environment as any)?.GOOGLE_STREETVIEW_KEY;
   }
   get missingCoords(): boolean {
     return !(this.einsatz?.location?.x != null && this.einsatz?.location?.y != null);
+  }
+
+  /** Effektive Alarmzeit in ms: GET-Override > Einsatz.alarmtime */
+  private effectiveAlarmMs(e?: Einsatz | null): number | null {
+    if (this.alarmOverrideMs != null) return this.alarmOverrideMs;
+    const v: any = e?.alarmtime ?? null;
+    if (v == null) return null;
+    if (typeof v === 'number') return v;
+    if (v instanceof Date) return v.getTime();
+    const t = Date.parse(String(v));
+    return Number.isFinite(t) ? t : null;
+  }
+  effectiveAlarmDate(e?: Einsatz | null): Date | null {
+    const ms = this.effectiveAlarmMs(e);
+    return ms != null ? new Date(ms) : null;
+  }
+  /** Umschalten auf RestV2 nach >30 Minuten (mit Override) */
+  isOlderThan30Min(e?: Einsatz | null): boolean {
+    const ms = this.effectiveAlarmMs(e);
+    if (ms == null) return false;
+    return (Date.now() - ms) > 30 * 60 * 1000;
+  }
+
+  /** ?alarm= ISO | Unix-ms | relativ (-15m, -2h, +30s) */
+  private readAlarmOverrideFromRoute(): void {
+    const raw = this.route.snapshot.queryParamMap.get('alarm');
+    this.alarmOverrideMs = this.parseAlarmParam(raw);
+  }
+  private parseAlarmParam(raw: string | null): number | null {
+    if (!raw) return null;
+    const s = raw.trim();
+
+    // Relativ: -15m, -2h, +30s
+    const rel = /^([+-]?)(\d+)\s*(s|m|h)$/i.exec(s);
+    if (rel) {
+      const sign = rel[1] === '-' ? -1 : 1;
+      const q = Number(rel[2]);
+      const unit = rel[3].toLowerCase();
+      const mul = unit === 'h' ? 3600000 : unit === 'm' ? 60000 : 1000;
+      return Date.now() + sign * q * mul;
+    }
+    // Unix ms
+    if (/^\d{10,}$/.test(s)) {
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
+    }
+    // ISO-String
+    const t = Date.parse(s);
+    return Number.isFinite(t) ? t : null;
   }
 
   // Distanz in km zwischen Feuerwehrhaus und Ziel
@@ -153,12 +238,14 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     return `${km} km`;
   }
 
-  // ---------------- Header-Buttons ----------------
+  /* ================= Header-Buttons ================= */
+
   goTo(view: 'v1'|'v2'): void {
     this.router.navigate([view === 'v1' ? '/alarm' : '/alarm2']);
   }
 
-  // ---------------- Koordinaten speichern ----------------
+  /* ================= Koordinaten speichern ================= */
+
   saveCoords(raw: string): void {
     this.coordError = null;
     if (!this.applyCoordsFromString(raw)) return;
@@ -166,10 +253,12 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     this.lastCheckedKey = ''; // SV neu
     this.lastRouteKey   = ''; // Route/Geocode neu
     this.bumpBust();
-    this.checkStreetViewAvailability();
-    this.fetchRouteAndAddress();
-    this.ensureLeaflet(true);
-    this.recalcSizes();
+    if (!this.isOlderThan30Min(this.einsatz)) {
+      this.checkStreetViewAvailability();
+      this.fetchRouteAndAddress();
+      this.ensureLeaflet(true);
+      this.recalcSizes();
+    }
   }
 
   private applyCoordsFromString(raw: string): boolean {
@@ -187,7 +276,8 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     return true;
   }
 
-  // ---------------- Größen & URLs (Street View) ----------------
+  /* ================= Größen & URLs (Street View) ================= */
+
   private setupResizeObserver(): void {
     const el = this.panelBodyRef?.nativeElement;
     if (!el) return;
@@ -202,6 +292,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   private recalcSizes = (): void => {
+    if (this.isOlderThan30Min(this.einsatz)) return;
     const el = this.panelBodyRef?.nativeElement;
     if (!el) return;
     const cw = Math.max(1, Math.floor(el.clientWidth));
@@ -244,8 +335,10 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     return u.length ? u.concat(u) : u;
   }
 
-  // ---------------- Street View Verfügbarkeit ----------------
+  /* ================= Street View Verfügbarkeit ================= */
+
   private async checkStreetViewAvailability(): Promise<void> {
+    if (this.isOlderThan30Min(this.einsatz)) return;
     if (this.missingCoords) { this.svStatus = 'unknown'; return; }
     if (this.missingKey)   { this.svStatus = 'error'; this.updateAlternateTimer(); return; }
 
@@ -255,7 +348,6 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     const sig = `${key}|${lat},${lon}`;
 
     if (this.lastCheckedKey === sig && (this.svStatus === 'ok' || this.svStatus === 'none')) {
-      // Status stabil → Timer prüfen
       this.updateAlternateTimer();
       return;
     }
@@ -288,7 +380,8 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     this.updateAlternateTimer();
   }
 
-  // ---------------- Route + Geocoding ----------------
+  /* ================= Route + Geocoding ================= */
+
   private ensureMapsScript(): Promise<void> {
     const key = (environment as any)?.GOOGLE_STREETVIEW_KEY || '';
     if (!key) return Promise.reject(new Error('Missing Google key'));
@@ -308,6 +401,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   private async fetchRouteAndAddress(): Promise<void> {
+    if (this.isOlderThan30Min(this.einsatz)) return;
     if (this.missingKey || this.missingCoords) { this.routeStatus = 'fail'; return; }
 
     const key = (environment as any)?.GOOGLE_STREETVIEW_KEY || '';
@@ -341,7 +435,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
       this.routeLatLngs = path?.length ? path.map((p: any) => [p.lat(), p.lng()]) : [];
       this.etaMinutes = leg?.duration?.value != null ? Math.max(1, Math.round(leg.duration.value / 60)) : null;
 
-      // Geocoder (formatierte Adresse)
+      // Geocoder
       const geocoder = new g.maps.Geocoder();
       const geoRes: any = await new Promise((resolve, reject) => {
         geocoder.geocode({ location: { lat, lng: lon } }, (res: any, status: any) =>
@@ -355,7 +449,7 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
       this.routeStatus = 'ok';
       this.lastRouteKey = sig;
       this.ensureLeaflet(true);
-      this.refitMap(true); // nach Routing ggf. neu einpassen
+      this.refitMap(true);
     } catch {
       this.routeStatus = 'fail';
       this.ensureLeaflet(true);
@@ -363,7 +457,8 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     }
   }
 
-  // ---------------- Sichtbarkeit/Refit-Helper ----------------
+  /* ================= Sichtbarkeit/Refit-Helper ================= */
+
   private isMapVisible(): boolean {
     const el = document.getElementById('leafletV2Map') as HTMLElement | null;
     if (!el) return false;
@@ -375,7 +470,6 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
 
   private refitMap(force = false): void {
     if (!this.map) return;
-
     if (!force && !this.isMapVisible()) return;
 
     this.map.invalidateSize();
@@ -393,7 +487,6 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
 
     if (pts.length >= 2) {
       const b = L.latLngBounds(pts as any);
-      // dichteres Padding, danach noch eine Stufe näher (max. 18)
       this.map.fitBounds(b.pad(0.05), { animate: false, maxZoom: 18 });
       const curZ = this.map.getZoom() ?? 0;
       const center = b.getCenter();
@@ -403,8 +496,11 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
     }
   }
 
-  // ---------------- Leaflet (blauer Pfad + SVG-Icons) ----------------
+  /* ================= Leaflet (Pfad + Marker) ================= */
+
   private ensureLeaflet(refreshTiles = false): void {
+    if (this.isOlderThan30Min(this.einsatz)) return;
+
     const destLat = this.einsatz?.location?.x ?? null;
     const destLon = this.einsatz?.location?.y ?? null;
     if (destLat == null || destLon == null) return;
@@ -414,7 +510,6 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
 
     const tileUrl = () => `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?ts=${this.bust}`;
 
-    // SVGs (Pfad ggf. anpassen)
     const houseUrl = `assets/ffwh.svg?ts=${this.bust}`;
     const flameUrl = `assets/flame.svg?ts=${this.bust}`;
 
@@ -467,50 +562,48 @@ export class AlarmV2Component implements OnChanges, AfterViewInit, OnDestroy {
       this.routeLayer?.setStyle({ color: '#1e90ff', weight: 6, opacity: 1.0 });
     }
 
-    // Routepunkte aktualisieren
     if (this.routeLayer) this.routeLayer.setLatLngs(this.routeLatLngs);
 
-    // Refit nur, wenn sichtbar – sonst später beim Umschalten
     this.refitMap(false);
   }
 
-  // ---------------- Alternation Timer (SV <-> Karte) ----------------
+  /* ================= Alternation Timer (SV <-> Karte) ================= */
+
   private updateAlternateTimer(): void {
-    // Aufräumen
+    if (this.isOlderThan30Min(this.einsatz)) {
+      // Sicherstellen, dass Timer gestoppt sind
+      if (this.altTimer) { clearTimeout(this.altTimer); this.altTimer = undefined; }
+      this.showStreetView = false;
+      return;
+    }
+
     if (this.altTimer) { clearTimeout(this.altTimer); this.altTimer = undefined; }
 
-    // Distanz-Regel
     const dist = this.distanceKm();
     const tooFar = dist != null && dist > this.DISTANCE_LIMIT_KM;
 
-    // Bedingungen prüfen: SV nur wenn verfügbar und nicht zu weit
     const canAlternate = !this.missingKey && this.svStatus === 'ok' && !tooFar;
 
-    // Startansicht immer Karte
+    // Start: Karte
     this.showStreetView = false;
     requestAnimationFrame(() => {
       this.ensureLeaflet(false);
       this.refitMap(true);
     });
 
-    if (!canAlternate) {
-      // dauerhaft Karte
-      return;
-    }
+    if (!canAlternate) return;
 
-    // Wechsel-Loop mit unterschiedlichen Phasenlängen (15s Map → 7s SV → 15s Map ...)
     const runCycle = () => {
-      // Phase 1: MAP sichtbar (bereits aktiv). Nach ALT_MAP_MS → SV
+      // Phase 1: MAP → nach ALT_MAP_MS zu SV
       this.altTimer = setTimeout(() => {
-        if (this.svStatus !== 'ok') return; // Sicherheit
-        this.zone.run(() => {
-          this.showStreetView = true;   // fade-in SV
-        });
+        if (this.svStatus !== 'ok' || this.isOlderThan30Min(this.einsatz)) return;
+        this.zone.run(() => { this.showStreetView = true; });
 
-        // Phase 2: nach ALT_SV_MS → zurück zu MAP
+        // Phase 2: SV → zurück MAP
         this.altTimer = setTimeout(() => {
+          if (this.isOlderThan30Min(this.einsatz)) return;
           this.zone.run(() => {
-            this.showStreetView = false; // fade zurück zu Map
+            this.showStreetView = false;
             requestAnimationFrame(() => {
               this.ensureLeaflet(false);
               requestAnimationFrame(() => this.refitMap(true));

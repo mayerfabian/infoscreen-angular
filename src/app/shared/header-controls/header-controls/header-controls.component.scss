@@ -9,69 +9,119 @@
   border-radius: 0.9rem;
 }
 
-/* Design-Variablen für exakte Höhen */
+/* Design-Variablen */
 :root {
-  --hc-gap-v: .35rem;   /* vertikaler Button-Abstand in den Spalten */
-  --hc-btn-h: 38px;     /* Höhe eines Standard-Buttons */
+  --hc-gap-h: 1.35rem;  /* H-Gap zwischen Spalten (größer) */
+  --hc-gap-v: .80rem;   /* V-Gap zwischen Reihen  (größer) */
+  --hc-btn-h: 40px;     /* Höhe eines Standard-Buttons (Row-Höhe leicht größer) */
+  --hc-head-h: 1.05rem; /* optische Höhe der Überschrift (Row 1/3) */
+  --hc-pad-y: .85rem;   /* vert. Innenabstand des Panels */
+  --hc-pad-x: .95rem;   /* horiz. Innenabstand */
 }
 
+/* ====== GRID-LAYOUT FÜR DAS GESAMTE DASHBOARD ====== */
 .hc {
-  display: flex;
-  align-items: flex-start;
-  gap: .9rem;
+  display: grid;
+
+  /* Spalten:
+     1) Drag-Label
+     2) Alarmscreen
+     3) Ruhemodus
+     4) Test/Alarmzeiten (breiter)
+     5) Input
+  */
+  grid-template-columns:
+    auto                         /* Drag-Label links */
+    minmax(10.2rem, auto)        /* Alarmscreen */
+    minmax(10.2rem, auto)        /* Ruhemodus */
+    minmax(13.6rem, 1fr)         /* Test + Alarmzeiten (breiter) */
+    minmax(12.0rem, auto);       /* Input (etwas breiter) */
+
+  /* Reihen:
+     1) Überschriften
+     2) Button-Reihe oben
+     3) schmale Überschrift "Alarmzeiten"
+     4) Button-Reihe unten
+  */
+  grid-template-rows:
+    var(--hc-head-h)
+    var(--hc-btn-h)
+    var(--hc-head-h)
+    var(--hc-btn-h);
+
+  column-gap: var(--hc-gap-h);
+  row-gap: var(--hc-gap-v);
+  align-items: start; /* oben bündig */
+
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: #000;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(4px);
   border-radius: .6rem;
-  padding: .55rem .6rem .6rem;
+
+  /* mehr Innenabstand, damit nichts klebt */
+  padding: var(--hc-pad-y) var(--hc-pad-x);
+
   box-shadow: 0 6px 18px rgba(0,0,0,.08);
   line-height: 1;
 }
 
 @media (prefers-color-scheme: dark) {
   .hc {
-  color: #fff;
+    color: #fff;
     background: rgba(28,32,38,0.86);
     box-shadow: 0 6px 18px rgba(0,0,0,.35);
   }
 }
 
-/* Drag-Handle */
+/* ====== GRID-POSITIONEN ====== */
+
+/* Drag-Label links – über alle Reihen, eigener Puffer rechts */
 .hc__drag {
+  grid-column: 1 / 2;
+  grid-row: 1 / 5;
   cursor: move;
   font-weight: 800;
-  font-size: .9rem;
-  letter-spacing: .02em;
+  font-size: .92rem;
+  letter-spacing: .01em;
   opacity: .9;
-  margin-right: .2rem;
-  padding: .25rem .4rem;
+  padding: .25rem .7rem .25rem .45rem;
   border-radius: .4rem;
   user-select: none;
-  align-self: stretch;
   display: flex;
   align-items: center;
+  margin-right: .3rem;
+  height: 100%;
 }
 
-/* Spalte (Überschrift + Buttons untereinander) */
-.hc__col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--hc-gap-v);
-  min-width: 9.2rem;
-}
-
+/* Überschriften in Reihe 1 (und Alarmzeiten-Zwischenhead in Reihe 3) */
 .hc__heading {
-  font-size: .78rem;
+  padding-left:8px;
+  font-size: .8rem;
   font-weight: 700;
-  opacity: .7;
-  margin-bottom: .05rem;
+  opacity: .72;
+  line-height: 1;
+  display: flex;
+  align-items: flex-end;
+  height: var(--hc-head-h);
+  white-space: nowrap;
+  padding-bottom: .12rem; /* etwas Puffer unter der Headline */
+  letter-spacing: .01em;
 }
+.hc__head--alarm      { grid-column: 2; grid-row: 1; }
+.hc__head--rest       { grid-column: 3; grid-row: 1; }
+.hc__head--test       { grid-column: 4; grid-row: 1; }
+.hc__head--input      { grid-column: 5; grid-row: 1; }
+.hc__head--alarmtimes { grid-column: 4; grid-row: 3; align-self: end; }
 
-/* Buttons kompakt */
+/* Buttons – feste Höhe → exakte Zeilen,
+   mit mehr Padding, damit die Label atmen */
 .hc__btn {
-  padding: .44rem .7rem;
-  border-radius: .55rem;
+  height: 40px !important;
+  margin: 4px;
+  box-sizing: border-box;
+  padding: .54rem .95rem;
+  border-radius: .6rem;
   border: 2px solid #c7ccd1;
   background: #ffffff;
   color: #111;
@@ -79,11 +129,14 @@
   font-weight: 800;
   letter-spacing: .02em;
   white-space: nowrap;
-  transition: background .12s ease, color .12s ease, border-color .12s ease,
-              box-shadow .12s ease, transform .02s ease;
-  min-height: var(--hc-btn-h);
+  transition:
+    background .12s ease,
+    color .12s ease,
+    border-color .12s ease,
+    box-shadow .12s ease,
+    transform .02s ease;
+  height: var(--hc-btn-h);
 }
-
 .hc__btn:hover { background: #f3f5f7; }
 .hc__btn:active { transform: translateY(1px); }
 .hc__btn:focus-visible {
@@ -91,8 +144,11 @@
   box-shadow: 0 0 0 3px rgba(125,180,255,.75);
   border-color: #5a9aff;
 }
+.input{
+  margin: 4px 8px 4px 8px;
+}
 
-/* Aktive Farben */
+/* Aktive Zustände (blau) */
 button.hc__btn.is-active,
 button.hc__btn[aria-pressed="true"] {
   background: #0b5cff;
@@ -103,40 +159,53 @@ button.hc__btn[aria-pressed="true"] {
     0 0 0 2px rgba(9,73,197,.25);
 }
 
-/* Ruhe-Gruppe – grün */
-.hc__col:nth-of-type(3) button.hc__btn.is-active,
-.hc__col:nth-of-type(3) button.hc__btn[aria-pressed="true"] {
-  background: #17b26a;
-  color: #fff;
-  border-color: #0e8d52;
+/* Ruhemodus grün (zweite Spalte) */
+.hc__cell--rest1.is-active,
+.hc__cell--rest2.is-active,
+.hc__cell--rest1[aria-pressed="true"],
+.hc__cell--rest2[aria-pressed="true"] {
+  background: #17b26a !important;
+  border-color: #0e8d52 !important;
   box-shadow:
     inset 0 -2px 0 rgba(0,0,0,.08),
-    0 0 0 2px rgba(14,141,82,.25);
+    0 0 0 2px rgba(14,141,82,.25) !important;
 }
 
-/* TEST – exakt doppelte Höhe zweier Buttons inkl. Zwischenabstand */
-.hc__col--test .hc__btn--test {
-  min-height: calc(var(--hc-btn-h) * 2 + var(--hc-gap-v));
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Zellen-Positionen der Buttons */
+.hc__cell--alarm1 { grid-column: 2; grid-row: 2; }
+.hc__cell--alarm2 { grid-column: 2; grid-row: 4; }
+
+.hc__cell--rest1  { grid-column: 3; grid-row: 2; }
+.hc__cell--rest2  { grid-column: 3; grid-row: 4; }
+
+/* TEST-Button spannt über beide Button-Reihen (Row 2..4) */
+.hc__cell--testspan {
+  grid-column: 4; grid-row: 2 / 5;
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
 }
 
-/* Input-Spalte rechts neben TEST */
-.hc__col--input {
-  min-width: 10.2rem;
-  align-items: stretch;
+/* Alarmzeiten – zwei Buttons unten nebeneinander innerhalb der Test-Spalte */
+.hc__btnrow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;      /* größerer Abstand zwischen -45 und -15 */
+  width: 100%;
 }
+.hc__btn--alarm { width: 100%; text-align: center; font-weight: 800; }
+.hc__cell--alarmrow { grid-column: 4; grid-row: 4; }
 
+/* Input rechts neben TEST (Row 2, Column 5) */
+.hc__cell--input { grid-column: 5; grid-row: 2; }
 .hc__input {
   font: inherit;
-  padding: .4rem .55rem;
-  border-radius: .5rem;
+  padding: .54rem .8rem;
+  border-radius: .55rem;
   border: 2px solid #c7ccd1;
   background: #fff;
-  min-height: var(--hc-btn-h);
+  height: var(--hc-btn-h);
+  width: 100%;
 }
-
 .hc__input:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(125,180,255,.75);

@@ -1,41 +1,32 @@
 ﻿<div class="restv2-content">
   @if (offeneEinsaetze().length === 0) {
-    <!-- Keine offenen Einsätze → History -->
     <div class="restv2-history">
       <div class="history-scroll">
         <div class="history-list">
           @for (h of history(); track h.einsatzdatum_iso) {
             <div class="history-row">
-              <div
-                class="hbadge"
-                [ngClass]="
-                  (h.einsatzalarmstufe || '').toUpperCase().startsWith('B') ? 'hbadge-b' :
-                  (h.einsatzalarmstufe || '').toUpperCase().startsWith('T') ? 'hbadge-t' :
-                  (h.einsatzalarmstufe || '').toUpperCase().startsWith('S') ? 'hbadge-s' : 'hbadge-x'
-                "
-              >
-                {{ (h.einsatzalarmstufe || '??').slice(0,2).toUpperCase() }}
-              </div>
+              <div class="hbadge" [ngClass]="
+                (h.einsatzalarmstufe || '').toUpperCase().startsWith('B') ? 'hbadge-b' :
+                (h.einsatzalarmstufe || '').toUpperCase().startsWith('T') ? 'hbadge-t' :
+                (h.einsatzalarmstufe || '').toUpperCase().startsWith('S') ? 'hbadge-s' : 'hbadge-x'
+              ">{{ (h.einsatzalarmstufe || '??').slice(0,2).toUpperCase() }}</div>
 
-              <div class="history-left">
+                            <div class="history-left">
                 <div class="history-grund">{{ h.einsatzgrund }}</div>
-                <div class="history-ort">
-                  @if (h.einsatzort) { {{ h.einsatzort }} } @else { &mdash; }
-                </div>
+                <div class="history-ort">@if (h.einsatzort) { {{ h.einsatzort }} } @else { &mdash; }</div>
               </div>
-
               <div class="history-right">
                 <span class="history-date">{{ h.einsatzdatum_iso | date:'EEEE, dd.MM.yyyy' }}</span>
                 <span class="history-clock">{{ h.einsatzdatum_iso | date:'HH:mm:ss' }}</span>
                 <span class="history-ago">{{ agoText(h.einsatzdatum_iso) }}</span>
               </div>
-            </div>
+              </div>
           }
         </div>
       </div>
     </div>
   } @else if (offeneEinsaetze().length === 1) {
-    <!-- Ein einzelner Einsatz, kein Carousel nötig -->
+    <!-- Ein einzelner Einsatz, kein Carousel nÃƒÂ¶tig -->
     <div class="restv2-single">
       @for (e of offeneEinsaetze(); track e.einsatznummer) {
         <article class="restv2-card panel" aria-label="Offener Einsatz">
@@ -73,7 +64,7 @@
                 }
               </div>
             } @else {
-              <div class="restv2-logempty">Noch keine Einträge vorhanden.</div>
+              <div class="restv2-logempty">Noch keine EintrÃƒÂ¤ge vorhanden.</div>
             }
           </div>
 
@@ -82,22 +73,22 @@
             <footer class="restv2-card__footer">
               <div class="vbtn-row" role="group" aria-label="Fahrzeuge">
                 @for (f of e.fahrzeuge; track f.rufname) {
-                  <button
-                    type="button"
-                    class="vbtn"
-                    [ngClass]="btnClass(f)"
-                    [attr.title]="btnTitle(f)"
-                  >
+                  <button type="button" class="vbtn" [ngClass]="btnClass(f)" [attr.title]="btnTitle(f)">
                     <div class="vbtn__name">{{ nameOf(f) }}</div>
-                    <div class="vbtn__meta">
-                      km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}
-                    </div>
+                    <div class="vbtn__meta">km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}</div>
                   </button>
                 }
               </div>
-
-              <!-- NUR kompakter Status-Block -->
-              <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status">
+              <div class="sbadge-row" role="group" aria-label="Status">
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Mannschaftsmeldung') ? 'ok' : 'bad'">Mannschaft</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Verrechnung') ? 'ok' : 'bad'">Verrechnung</div>
+                <div class="sbadge" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fzg km+Mann</div>
+                <div class="sbadge" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
+              </div>
+              <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status kompakt">
                 <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
                 <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
                 <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
@@ -110,9 +101,16 @@
           } @else {
             <footer class="restv2-card__footer">
               <div class="no-fzg-badge" role="note">Keine Fahrzeuge disponiert</div>
-
-              <!-- NUR kompakter Status-Block -->
-              <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status">
+              <div class="sbadge-row" role="group" aria-label="Status">
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Mannschaftsmeldung') ? 'ok' : 'bad'">Mannschaft</div>
+                <div class="sbadge" [ngClass]="hasCategory(e, 'Verrechnung') ? 'ok' : 'bad'">Verrechnung</div>
+                <div class="sbadge" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fzg km+Mann</div>
+                <div class="sbadge" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
+              </div>
+              <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status kompakt">
                 <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
                 <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
                 <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
@@ -122,12 +120,11 @@
                 <div class="sbadge sbadge--flat" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
               </div>
             </footer>
-          }
-        </article>
+          }</article>
       }
     </div>
   } @else {
-    <!-- Mehrere Einsätze → Carousel (1 pro Slide) -->
+    <!-- 1 pro Slide, Schrittweite 100% -->
     <div class="restv2-carousel" role="region" aria-roledescription="carousel">
       <div
         class="restv2-track"
@@ -171,7 +168,7 @@
                   }
                 </div>
               } @else {
-                <div class="restv2-logempty">Noch keine Einträge vorhanden.</div>
+                <div class="restv2-logempty">Noch keine EintrÃƒÂ¤ge vorhanden.</div>
               }
             </div>
 
@@ -179,44 +176,49 @@
               <footer class="restv2-card__footer">
                 <div class="vbtn-row" role="group" aria-label="Fahrzeuge">
                   @for (f of e.fahrzeuge; track f.rufname) {
-                    <button
-                      type="button"
-                      class="vbtn"
-                      [ngClass]="btnClass(f)"
-                      [attr.title]="btnTitle(f)"
-                    >
+                    <button type="button" class="vbtn" [ngClass]="btnClass(f)" [attr.title]="btnTitle(f)">
                       <div class="vbtn__name">{{ nameOf(f) }}</div>
-                      <div class="vbtn__meta">
-                        km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}
-                      </div>
+                      <div class="vbtn__meta">km: {{ kmOf(f) }} &middot; Mann: {{ mannOf(f) }}</div>
                     </button>
                   }
-                </div>
-
-                <!-- NUR kompakter Status-Block -->
-                <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status">
+                                <div class="sbadge-row" role="group" aria-label="Status">
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Mannschaftsmeldung') ? 'ok' : 'bad'">Mannschaft</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Verrechnung') ? 'ok' : 'bad'">Verrechnung</div>
+                  <div class="sbadge" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fzg km+Mann</div>
+                  <div class="sbadge" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
+                  <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status kompakt"></div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
-                  <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage beim Eintreffen</div>
+                  <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Mannschaftsmeldung') ? 'ok' : 'bad'">Mannschaft</div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Verrechnung') ? 'ok' : 'bad'">Verrechnung</div>
-                  <div class="sbadge sbadge--flat" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fahrzeuge</div>
+                  <div class="sbadge sbadge--flat" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fzg km+Mann</div>
                   <div class="sbadge sbadge--flat" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
+                </div>
                 </div>
               </footer>
             } @else {
               <footer class="restv2-card__footer">
-                <div class="no-fzg-badge" role="note">Keine Fahrzeuge disponiert</div>
-
-                <!-- NUR kompakter Status-Block -->
-                <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status">
+                <div class="no-fzg-badge" role="note">Keine Fahrzeuge disponiert                <div class="sbadge-row" role="group" aria-label="Status">
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Mannschaftsmeldung') ? 'ok' : 'bad'">Mannschaft</div>
+                  <div class="sbadge" [ngClass]="hasCategory(e, 'Verrechnung') ? 'ok' : 'bad'">Verrechnung</div>
+                  <div class="sbadge" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fzg km+Mann</div>
+                  <div class="sbadge" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
+                                <div class="sbadge-row sbadge-row--flat" role="group" aria-label="Status kompakt"></div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Einsatzleiter') ? 'ok' : 'bad'">Einsatzleiter</div>
-                  <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage beim Eintreffen</div>
+                  <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Lage beim Eintreffen') ? 'ok' : 'bad'">Lage</div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Tätigkeit') ? 'ok' : 'bad'">Tätigkeit</div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Mannschaftsmeldung') ? 'ok' : 'bad'">Mannschaft</div>
                   <div class="sbadge sbadge--flat" [ngClass]="hasCategory(e, 'Verrechnung') ? 'ok' : 'bad'">Verrechnung</div>
-                  <div class="sbadge sbadge--flat" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fahrzeuge</div>
+                  <div class="sbadge sbadge--flat" [ngClass]="allVehiclesComplete(e) ? 'ok' : 'bad'">Fzg km+Mann</div>
                   <div class="sbadge sbadge--flat" [ngClass]="einsatzzeitenOk(e) ? 'ok' : 'bad'">Zeiten ok</div>
+                </div>
                 </div>
               </footer>
             }
@@ -226,3 +228,10 @@
     </div>
   }
 </div>
+
+
+
+
+
+
+

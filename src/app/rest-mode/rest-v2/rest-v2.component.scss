@@ -22,9 +22,13 @@
   padding-inline: var(--side-gutter);
   display:flex; align-items:stretch;
 }
-.restv2-single > .restv2-card{ flex:1 1 auto; }
+.restv2-single > .restv2-card{
+  flex:1 1 auto;
+  width: 100%;            /* Single vollbreit */
+  margin: 0;              /* kein Auto-Centering in Single */
+}
 
-/* ===== Panel ===== */
+/* ===== Panel / Karte ===== */
 .restv2-card{
   display:flex; flex-direction:column;
   min-height:420px; height:100%;
@@ -34,6 +38,10 @@
   border:1px solid rgba(255,255,255,0.08);
   box-shadow:0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
   color:#e9ecef;
+
+  /* Abstand entsteht durch schmalere Karte, nicht durch Slide-Padding/Margins */
+  width: calc(100% - 2 * var(--side-gap));
+  margin: 0 auto; /* Karte mittig im Slide */
 }
 
 /* Header – etwas größer */
@@ -129,16 +137,19 @@
 
 /* ===== Carousel: 1 Karte pro Slide ===== */
 .restv2-carousel{
-  position:relative; width:100%; height:100%; overflow:hidden;
-  padding-inline: var(--side-gutter); /* Seitengutter */
+  position:relative; width:100%; height:100%; overflow:hidden; /* außen clippen */
+  padding-inline: var(--side-gutter); /* globaler Seitengutter */
 }
 .restv2-track{
-  display:flex; height:100%; will-change: transform;
+  display:flex; height:100%;
+  will-change: transform;
+  overflow: visible; /* Schatten dürfen über Track hinausragen */
 }
 .restv2-slide{
   flex: 0 0 100%;
   min-width: 0;
-  padding-inline: var(--side-gap); /* sichtbarer Randabstand pro Karte */
+  padding-inline: 0;    /* wichtig: kein Slide-Padding → 1 Slide = 100% */
+  box-sizing: border-box;
 }
 
 /* Leerer-State ganz oben */
@@ -150,7 +161,7 @@
 /* ===== History (wenn keine offenen Einsätze) ===== */
 .history-list{ display:flex; flex-direction:column; gap:14px; }
 .history-row{
-  display:grid; grid-template-columns: 8vh 1fr max-content; /* Badge | Text links | Datum rechts */
+  display:grid; grid-template-columns: 8vh 1fr 1fr;
   align-items:center; gap:16px;
   padding:16px 18px; border-radius:16px;
   background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
@@ -159,19 +170,17 @@
   display:inline-flex; align-items:center; justify-content:center;
   width:8vh; height:8vh; border-radius:1.6vh; font-weight:900; color:#fff; font-size:calc(8vh * 0.48); letter-spacing:.6px;
 }
-.history-left{ display:flex; flex-direction:column; gap:8px; min-width:0; }
-.history-right{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; min-width:max-content; }
-.history-datetime{ display:flex; flex-direction:column; align-items:flex-end; line-height:1.12; }
+.history-left{ min-width:0; }
+.history-right{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 .history-date{ font-size:2.4vh; font-weight:800; color:#e9ecef; white-space:nowrap; }
-.history-clock{ font-size:2.0vh; font-weight:800; color:rgba(255,255,255,0.9); white-space:nowrap; }
-.history-ago{ font-size:1.8vh; font-weight:700; color:rgba(255,255,255,0.7); white-space:nowrap; }
+.history-clock{ font-size:2.2vh; font-weight:800; color:rgba(255,255,255,0.9); white-space:nowrap; }
 .hbadge-b{ background:#e53935; }
 .hbadge-t{ background:#1976d2; }
 .hbadge-s{ background:#f6b822; color:#000; }
 .hbadge-x{ background:#6c757d; }
-.history-time{ font-size:2.2vh; color:rgba(255,255,255,0.9); font-weight:800; text-align:right; white-space:nowrap; }
-.history-ort{ font-size:2.2vh; color:#cfe1ff; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.history-grund{ font-size:2.6vh; color:#e9ecef; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:.98; }
+.history-ort{ font-size:2.2vh; color:#cfe1ff; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-grund{ font-size:2vh; color:#e9ecef; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:.98; }
+
 /* History full-height container (no panel wrapper) */
 .restv2-history{
   height:100%; min-height:0; position:relative; padding-inline: var(--side-gutter);
@@ -179,13 +188,21 @@
 }
 .history-scroll{
   position:relative; height:100%; min-height:0; overflow:auto; padding-bottom: 6vh;
-  /* fade-out of content at bottom without tint */
+  /* Fade-out am unteren Rand (ohne Tint) */
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) calc(100% - 8vh), rgba(0,0,0,0) 100%);
           mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) calc(100% - 8vh), rgba(0,0,0,0) 100%);
-  /* hide scrollbar visuals across engines */
+  /* Scrollbar optisch verbergen */
   scrollbar-width: none;        /* Firefox */
   -ms-overflow-style: none;     /* IE/Edge */
-  overscroll-behavior: contain; /* prevent outer scroll chaining */
+  overscroll-behavior: contain; /* kein Outer-Scroll-Chaining */
 }
 .history-scroll::-webkit-scrollbar{ display:none; width:0; height:0; }
-/* removed visual overlay to avoid gray tint at bottom */
+
+/* Status-Badges (kompakt) */
+.sbadge-row{ display:grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap:8px; margin-top:10px; }
+.sbadge{ text-align:center; padding:10px 8px; border-radius:10px; font-weight:800; letter-spacing:.2px; }
+.sbadge.ok{ background:#00c853; color:#fff; }
+.sbadge.bad{ background:var(--danger); color:var(--danger-ink); }
+
+.sbadge-row--flat{ margin-top:6px; }
+.sbadge--flat{ padding:4px 6px; border-radius:8px; font-weight:700; font-size:0.95rem; line-height:1.1; }
